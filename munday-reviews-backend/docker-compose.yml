@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # MySQL Service
+  mysql:
+    image: mysql:8.0
+    container_name: munday-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./src/config/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - munday-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: munday-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+    ports:
+      - "${PORT}:${PORT}"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - munday-network
+
+volumes:
+  mysql_data:
+
+networks:
+  munday-network:
+    driver: bridge 
