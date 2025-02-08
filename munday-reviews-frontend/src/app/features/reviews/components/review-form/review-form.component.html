@@ -1,0 +1,73 @@
+<div class="form-container">
+    <div class="form-header">
+        <button class="btn btn-icon" (click)="onCancel()">←</button>
+        <h1>Write a Review</h1>
+    </div>
+
+    <form [formGroup]="reviewForm" (ngSubmit)="onSubmit()" class="review-form">
+        <!-- Organization Selection -->
+        <div class="form-group">
+            <label>Select Organization</label>
+            <div class="organization-grid">
+                <div *ngFor="let org of organizations" 
+                     class="organization-card" 
+                     [class.selected]="reviewForm.get('organization')?.value === org.value"
+                     (click)="reviewForm.patchValue({ organization: org.value })">
+                    <h4>{{ org.label }}</h4>
+                </div>
+            </div>
+            <div class="error-message" *ngIf="reviewForm.get('organization')?.touched && reviewForm.get('organization')?.errors?.['required']">
+                Please select an organization
+            </div>
+        </div>
+
+        <!-- Rating -->
+        <div class="form-group">
+            <label>Rate Your Experience</label>
+            <div class="rating-container">
+                <div class="star-rating">
+                    <button *ngFor="let star of [1,2,3,4,5]" 
+                            type="button"
+                            class="star-button"
+                            [class.selected]="reviewForm.get('rating')?.value >= star"
+                            (click)="setRating(star)">
+                        <span class="star">{{ reviewForm.get('rating')?.value >= star ? '★' : '☆' }}</span>
+                    </button>
+                </div>
+                <p class="rating-label">{{ getRatingLabel(reviewForm.get('rating')?.value) }}</p>
+            </div>
+            <div class="error-message" *ngIf="reviewForm.get('rating')?.touched && reviewForm.get('rating')?.errors?.['required']">
+                Please select a rating
+            </div>
+        </div>
+
+        <!-- Review Content -->
+        <div class="form-group">
+            <label for="content">Write Your Review</label>
+            <textarea id="content"
+                      formControlName="content"
+                      class="form-input"
+                      rows="6"
+                      placeholder="What did you like or dislike? What stood out to you?"></textarea>
+            <div class="error-message" *ngIf="reviewForm.get('content')?.touched">
+                <div *ngIf="reviewForm.get('content')?.errors?.['required']">
+                    Please write a review
+                </div>
+                <div *ngIf="reviewForm.get('content')?.errors?.['minlength']">
+                    Review must be at least 10 characters
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-outline" (click)="onCancel()">Cancel</button>
+            <button type="submit" 
+                    class="btn btn-primary"
+                    [disabled]="!reviewForm.valid || isLoading">
+                Submit Review
+            </button>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+    </form>
+</div> 

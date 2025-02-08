@@ -1,0 +1,47 @@
+<div class="layout">
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <!-- Logo -->
+            <a routerLink="/dashboard" class="logo">
+                <img src="assets/logo.png" alt="Munday Reviews" class="logo-img">
+                <span class="logo-text">Munday Reviews</span>
+            </a>
+
+            <!-- Main Navigation -->
+            <div class="nav-links">
+                <a routerLink="/dashboard" 
+                   routerLinkActive="active" 
+                   [routerLinkActiveOptions]="{exact: true}"
+                   class="nav-link">
+                    Dashboard
+                </a>
+                <a routerLink="/reviews" 
+                   routerLinkActive="active" 
+                   class="nav-link">
+                    Reviews
+                </a>
+                <a routerLink="/organizations" 
+                   routerLinkActive="active" 
+                   class="nav-link">
+                    Organizations
+                </a>
+            </div>
+
+            <!-- User Menu -->
+            <div class="user-menu">
+                <button class="btn btn-primary" routerLink="/reviews/create">
+                    Write Review
+                </button>
+                <button class="btn btn-text" (click)="onLogout()">
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <router-outlet></router-outlet>
+    </main>
+</div> 

@@ -1,0 +1,89 @@
+<div class="form-container">
+    <div class="form-header">
+        <button class="btn btn-icon" (click)="onCancel()">←</button>
+        <h1>New Organization</h1>
+    </div>
+
+    <form [formGroup]="organizationForm" (ngSubmit)="onSubmit()" class="organization-form">
+        <div class="form-group">
+            <label for="name">Organization Name</label>
+            <input id="name" 
+                   type="text" 
+                   formControlName="name" 
+                   placeholder="Enter organization name"
+                   class="form-input">
+            <div class="error-message" *ngIf="organizationForm.get('name')?.touched && organizationForm.get('name')?.errors?.['required']">
+                Name is required
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" 
+                      formControlName="description" 
+                      placeholder="Describe the organization"
+                      class="form-input"
+                      rows="4"></textarea>
+            <div class="error-message" *ngIf="organizationForm.get('description')?.touched && organizationForm.get('description')?.errors?.['required']">
+                Description is required
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="industry">Industry</label>
+            <select id="industry" 
+                    formControlName="industry"
+                    class="form-select">
+                <option value="">Select an industry</option>
+                <option value="technology">Technology</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="finance">Finance</option>
+                <option value="education">Education</option>
+                <option value="manufacturing">Manufacturing</option>
+            </select>
+            <div class="error-message" *ngIf="organizationForm.get('industry')?.touched && organizationForm.get('industry')?.errors?.['required']">
+                Industry is required
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="location">Location</label>
+            <input id="location" 
+                   type="text" 
+                   formControlName="location" 
+                   placeholder="City, State"
+                   class="form-input">
+            <div class="error-message" *ngIf="organizationForm.get('location')?.touched && organizationForm.get('location')?.errors?.['required']">
+                Location is required
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="employeeCount">Number of Employees</label>
+            <input id="employeeCount" 
+                   type="number" 
+                   formControlName="employeeCount" 
+                   placeholder="Enter number of employees"
+                   class="form-input">
+            <div class="error-message" *ngIf="organizationForm.get('employeeCount')?.touched">
+                <div *ngIf="organizationForm.get('employeeCount')?.errors?.['required']">
+                    Employee count is required
+                </div>
+                <div *ngIf="organizationForm.get('employeeCount')?.errors?.['min']">
+                    Must be at least 1 employee
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-outline" (click)="onCancel()">Cancel</button>
+            <button type="submit" 
+                    class="btn btn-primary" 
+                    [disabled]="!organizationForm.valid || isLoading">
+                Create Organization
+            </button>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+    </form>
+</div> 

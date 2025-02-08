@@ -1,0 +1,119 @@
+:host {
+    display: block;
+    min-height: 100vh;
+    background-color: var(--background);
+}
+
+.card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease-in-out;
+
+    &:hover {
+        transform: translateY(-2px);
+    }
+}
+
+.dashboard-container {
+  padding: var(--spacing-xl);
+  min-height: 100vh;
+  background-color: var(--background);
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  
+  h1 {
+    font-size: var(--font-size-xl);
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  
+  .header-actions {
+    button {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-lg) !important;
+      
+      mat-icon {
+        margin-right: var(--spacing-xs);
+      }
+    }
+  }
+}
+
+.dashboard-content {
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+    
+    .dashboard-card {
+      height: 100%;
+      
+      &.rating-distribution,
+      &.review-trend {
+        grid-column: span 1;
+      }
+      
+      &.recent-reviews,
+      &.top-organizations {
+        grid-column: span 1;
+      }
+      
+      mat-card-content {
+        height: calc(100% - 64px); // Subtract header height
+      }
+    }
+  }
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    
+    .dashboard-card {
+      &.rating-distribution,
+      &.review-trend,
+      &.recent-reviews,
+      &.top-organizations {
+        grid-column: span 1 !important;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: var(--spacing-md);
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    
+    .header-actions {
+      width: 100%;
+      
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+} 
