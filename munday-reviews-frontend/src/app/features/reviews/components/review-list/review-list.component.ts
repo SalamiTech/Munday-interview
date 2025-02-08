@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ReviewService, ReviewsResponse } from '../../../../core/services/review.service';
+import { ReviewService } from '../../../../core/services/review.service';
 import { Review } from '../../../../core/models/review.model';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
@@ -28,7 +28,7 @@ export class ReviewListComponent implements OnInit {
     
     searchQuery = '';
     statusFilter = '';
-    sortBy = 'date';
+    sortBy = 'createdAt:DESC';
     private searchSubject = new Subject<string>();
 
     constructor(
@@ -62,14 +62,14 @@ export class ReviewListComponent implements OnInit {
         };
 
         this.reviewService.getReviews(params).subscribe({
-            next: (response: ReviewsResponse) => {
-                this.reviews = response.reviews;
+            next: (response) => {
+                this.reviews = response.items;
                 this.totalReviews = response.total;
-                this.totalPages = Math.ceil(response.total / this.pageSize);
+                this.totalPages = response.totalPages;
                 this.isLoading = false;
             },
-            error: (error: Error) => {
-                this.error = error.message || 'Failed to load reviews';
+            error: (error) => {
+                this.error = error.message;
                 this.isLoading = false;
             }
         });
@@ -105,8 +105,33 @@ export class ReviewListComponent implements OnInit {
                 next: () => {
                     this.loadReviews();
                 },
-                error: (error: Error) => {
-                    this.error = error.message || 'Failed to delete review';
+                error: (error) => {
+                    this.error = error.message;
+                }
+            });
+        }
+    }
+
+    onMarkHelpful(review: Review): void {
+        this.reviewService.markHelpful(review.id).subscribe({
+            next: () => {
+                this.loadReviews();
+            },
+            error: (error) => {
+                this.error = error.message;
+            }
+        });
+    }
+
+    onReportReview(review: Review): void {
+        const reason = prompt('Please provide a reason for reporting this review:');
+        if (reason) {
+            this.reviewService.reportReview(review.id, reason).subscribe({
+                next: () => {
+                    this.loadReviews();
+                },
+                error: (error) => {
+                    this.error = error.message;
                 }
             });
         }

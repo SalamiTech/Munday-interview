@@ -31,9 +31,10 @@
         <select [(ngModel)]="sortBy"
                 (ngModelChange)="onFilterChange()"
                 class="form-select">
-            <option value="date">Date</option>
-            <option value="rating">Rating</option>
-            <option value="status">Status</option>
+            <option value="createdAt:DESC">Most Recent</option>
+            <option value="rating:DESC">Highest Rating</option>
+            <option value="rating:ASC">Lowest Rating</option>
+            <option value="helpfulCount:DESC">Most Helpful</option>
         </select>
     </div>
 
@@ -59,8 +60,8 @@
         <div *ngFor="let review of reviews" class="review-card">
             <div class="review-header">
                 <div class="review-info">
-                    <h3>{{ review.organizationName }}</h3>
-                    <p class="meta">by {{ review.userName }} • {{ review.createdAt | date }}</p>
+                    <h3>{{ review.organization?.name }}</h3>
+                    <p class="meta">by {{ review.user?.fullName || 'Anonymous' }} • {{ review.createdAt | date }}</p>
                 </div>
                 <span [class]="getStatusClass(review.status)">{{ review.status }}</span>
             </div>
@@ -79,6 +80,12 @@
             <p class="review-content">{{ review.content }}</p>
 
             <div class="review-actions">
+                <button class="btn btn-text" (click)="onMarkHelpful(review)">
+                    Helpful ({{ review.helpfulCount }})
+                </button>
+                <button class="btn btn-text" (click)="onReportReview(review)">
+                    Report
+                </button>
                 <button class="btn btn-text" (click)="onEditReview(review)">Edit</button>
                 <button class="btn btn-text delete" (click)="onDeleteReview(review)">Delete</button>
             </div>

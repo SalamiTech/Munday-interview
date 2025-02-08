@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getMe, updatePassword, updateMe } from '../controllers/auth.controller';
+import { register, login, getMe, changePassword, updateProfile } from '../controllers/auth.controller';
 import { protect } from '../middleware/auth.middleware';
 import { validateRequest } from '../middleware/validate.middleware';
 import { body } from 'express-validator';
@@ -37,13 +37,13 @@ router.patch('/updatePassword', [
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/)
         .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number and one special character'),
     validateRequest
-], updatePassword);
+], changePassword);
 
 router.patch('/updateMe', [
     body('firstName').optional().notEmpty().withMessage('First name cannot be empty'),
     body('lastName').optional().notEmpty().withMessage('Last name cannot be empty'),
     body('avatar').optional().isURL().withMessage('Please provide a valid URL for avatar'),
     validateRequest
-], updateMe);
+], updateProfile);
 
 export default router; 

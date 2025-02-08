@@ -9,7 +9,7 @@
         <div class="form-group">
             <label>Select Organization</label>
             <div class="organization-grid">
-                <div *ngFor="let org of organizations" 
+                <div *ngFor="let org of organizationOptions" 
                      class="organization-card" 
                      [class.selected]="reviewForm.get('organization')?.value === org.value"
                      (click)="reviewForm.patchValue({ organization: org.value })">

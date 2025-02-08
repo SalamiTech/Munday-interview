@@ -1,9 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { BehaviorSubject, Observable, map } from 'rxjs';
 import { Router } from '@angular/router';
-import { environment } from '../../../environments/environment';
+import { ApiService } from './api.service';
 
 export interface User {
     id: string;
@@ -32,10 +30,9 @@ export class AuthService {
     
     private readonly TOKEN_KEY = 'auth_token';
     private readonly USER_KEY = 'current_user';
-    private readonly apiUrl = `${environment.apiUrl}/auth`;
 
     constructor(
-        private http: HttpClient,
+        private apiService: ApiService,
         private router: Router
     ) {
         this.loadStoredAuth();
@@ -57,14 +54,13 @@ export class AuthService {
     }
 
     login(credentials: { email: string; password: string; rememberMe?: boolean }): Observable<User> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
-            tap(response => this.handleAuthResponse(response, credentials.rememberMe)),
-            map(response => response.user),
-            catchError(error => {
-                console.error('Login error:', error);
-                return throwError(() => new Error(this.getErrorMessage(error)));
-            })
-        );
+        return this.apiService.post<AuthResponse>('/auth/login', credentials)
+            .pipe(
+                map(response => {
+                    this.handleAuthResponse(response, credentials.rememberMe);
+                    return response.user;
+                })
+            );
     }
 
     register(userData: {
@@ -72,74 +68,64 @@ export class AuthService {
         password: string;
         firstName: string;
         lastName: string;
-        fullName: string;
     }): Observable<User> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/register`, userData).pipe(
-            tap(response => this.handleAuthResponse(response, true)),
-            map(response => response.user),
-            catchError(error => {
-                console.error('Registration error:', error);
-                return throwError(() => new Error(this.getErrorMessage(error)));
-            })
-        );
+        return this.apiService.post<AuthResponse>('/auth/register', userData)
+            .pipe(
+                map(response => {
+                    this.handleAuthResponse(response);
+                    return response.user;
+                })
+            );
     }
 
     logout(): void {
-        // Optionally call logout endpoint if needed
         this.clearAuth();
         this.router.navigate(['/auth/login']);
     }
 
     private handleAuthResponse(response: AuthResponse, remember: boolean = false): void {
-        this.currentUserSubject.next(response.user);
-        this.tokenSubject.next(response.token);
-
+        const { user, token } = response;
+        
         if (remember) {
-            localStorage.setItem(this.TOKEN_KEY, response.token);
-            localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
+            localStorage.setItem(this.TOKEN_KEY, token);
+            localStorage.setItem(this.USER_KEY, JSON.stringify(user));
         } else {
-            sessionStorage.setItem(this.TOKEN_KEY, response.token);
-            sessionStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
+            sessionStorage.setItem(this.TOKEN_KEY, token);
+            sessionStorage.setItem(this.USER_KEY, JSON.stringify(user));
         }
+
+        this.currentUserSubject.next(user);
+        this.tokenSubject.next(token);
     }
 
     private clearAuth(): void {
-        this.currentUserSubject.next(null);
-        this.tokenSubject.next(null);
         localStorage.removeItem(this.TOKEN_KEY);
         localStorage.removeItem(this.USER_KEY);
         sessionStorage.removeItem(this.TOKEN_KEY);
         sessionStorage.removeItem(this.USER_KEY);
+        this.currentUserSubject.next(null);
+        this.tokenSubject.next(null);
     }
 
     getToken(): string | null {
         return this.tokenSubject.value;
     }
 
-    private getErrorMessage(error: any): string {
-        if (error.error?.message) {
-            return error.error.message;
-        }
-        
-        if (error.status === 401) {
-            return 'Invalid email or password';
-        }
-        
-        if (error.status === 409) {
-            return 'An account with this email already exists';
-        }
-        
-        return 'An unexpected error occurred. Please try again later.';
-    }
-
-    // Social Authentication Methods
     loginWithGoogle(): Observable<User> {
         // TODO: Implement Google OAuth login
-        return of();
+        return this.apiService.get<AuthResponse>('/auth/google')
+            .pipe(map(response => {
+                this.handleAuthResponse(response);
+                return response.user;
+            }));
     }
 
     loginWithGithub(): Observable<User> {
         // TODO: Implement GitHub OAuth login
-        return of();
+        return this.apiService.get<AuthResponse>('/auth/github')
+            .pipe(map(response => {
+                this.handleAuthResponse(response);
+                return response.user;
+            }));
     }
 } 

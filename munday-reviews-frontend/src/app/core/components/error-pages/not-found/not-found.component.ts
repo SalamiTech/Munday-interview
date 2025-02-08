@@ -9,4 +9,8 @@ import { RouterModule } from '@angular/router';
     templateUrl: './not-found.component.html',
     styleUrls: ['./not-found.component.scss']
 })
-export class NotFoundComponent {} 
+export class NotFoundComponent {
+    goBack(): void {
+        window.history.back();
+    }
+} 

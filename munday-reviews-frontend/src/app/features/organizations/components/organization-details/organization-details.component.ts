@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { Organization } from '../../../../core/models/organization.model';
 import { Review } from '../../../../core/models/review.model';
+import { OrganizationService } from '../../../../core/services/organization.service';
+import { ReviewService } from '../../../../core/services/review.service';
 
 @Component({
     selector: 'app-organization-details',
@@ -22,7 +24,9 @@ export class OrganizationDetailsComponent implements OnInit {
 
     constructor(
         private route: ActivatedRoute,
-        private router: Router
+        private router: Router,
+        private organizationService: OrganizationService,
+        private reviewService: ReviewService
     ) {}
 
     ngOnInit(): void {
@@ -31,55 +35,63 @@ export class OrganizationDetailsComponent implements OnInit {
             this.router.navigate(['/organizations']);
             return;
         }
-        this.loadOrganization(id);
+        this.loadOrganizationData(id);
     }
 
-    private loadOrganization(id: string): void {
-        // TODO: Implement with OrganizationService
+    loadOrganizationData(id: string): void {
         this.isLoading = true;
         this.error = '';
         
-        // Mock data for now
-        setTimeout(() => {
-            this.organization = {
-                id,
-                name: 'Tech Corp',
-                description: 'Leading provider of innovative technology solutions.',
-                industry: 'Technology',
-                location: 'San Francisco, CA',
-                employeeCount: 5000,
-                averageRating: 4.5,
-                totalReviews: 156,
-                status: 'active',
-                createdAt: new Date('2023-01-15')
-            };
-            this.loadReviews(id);
-        }, 1000);
+        this.organizationService.getOrganization(id).subscribe({
+            next: (organization) => {
+                this.organization = organization;
+                this.loadReviews(parseInt(id));
+            },
+            error: (error) => {
+                this.error = error.message;
+                this.isLoading = false;
+            }
+        });
     }
 
-    private loadReviews(organizationId: string): void {
-        // TODO: Implement with ReviewService
-        setTimeout(() => {
-            this.reviews = [
-                {
-                    id: '1',
-                    content: 'Great company culture and work-life balance.',
-                    rating: 5,
-                    status: 'approved',
-                    organizationId,
-                    organizationName: 'Tech Corp',
-                    userId: 'user1',
-                    userName: 'John Doe',
-                    createdAt: new Date('2024-01-15')
-                }
-            ];
-            this.isLoading = false;
-        }, 500);
+    loadReviews(organizationId: number): void {
+        this.reviewService.getReviews({ 
+            organizationId,
+            limit: 5,
+            sort: 'createdAt:DESC'
+        }).subscribe({
+            next: (response) => {
+                this.reviews = response.items;
+                this.isLoading = false;
+            },
+            error: (error) => {
+                this.error = error.message;
+                this.isLoading = false;
+            }
+        });
     }
 
     onWriteReview(): void {
-        this.router.navigate(['/reviews/create'], {
-            queryParams: { organizationId: this.organization?.id }
-        });
+        if (this.organization?.id) {
+            this.router.navigate(['/reviews/create'], {
+                queryParams: { organizationId: parseInt(this.organization.id) }
+            });
+        }
+    }
+
+    getAverageRating(): number {
+        return this.organization?.averageRating || 0;
+    }
+
+    isStarFilled(star: number): boolean {
+        return (this.organization?.averageRating || 0) >= star;
+    }
+
+    getStarDisplay(star: number): string {
+        return this.isStarFilled(star) ? '★' : '☆';
+    }
+
+    getUserName(review: Review): string {
+        return review.user?.fullName || 'Anonymous';
     }
 } 

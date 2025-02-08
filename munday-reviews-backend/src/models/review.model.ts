@@ -48,12 +48,26 @@ export class Review extends Model<ReviewAttributes> {
     rating!: number;
 
     @Column({
-        type: DataType.ARRAY(DataType.STRING)
+        type: DataType.TEXT,
+        get() {
+            const rawValue = this.getDataValue('pros');
+            return rawValue ? JSON.parse(rawValue) : [];
+        },
+        set(value: string[]) {
+            this.setDataValue('pros', value ? JSON.stringify(value) : null);
+        }
     })
     pros?: string[];
 
     @Column({
-        type: DataType.ARRAY(DataType.STRING)
+        type: DataType.TEXT,
+        get() {
+            const rawValue = this.getDataValue('cons');
+            return rawValue ? JSON.parse(rawValue) : [];
+        },
+        set(value: string[]) {
+            this.setDataValue('cons', value ? JSON.stringify(value) : null);
+        }
     })
     cons?: string[];
 
