@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./munday-reviews-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - munday-network
+
+  backend:
+    build:
+      context: ./munday-reviews-backend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGIN=http://localhost
+    volumes:
+      - ./data:/app/data
+    networks:
+      - munday-network
+
+networks:
+  munday-network:
+    driver: bridge 
