@@ -1,28 +1,185 @@
 <div class="dashboard-container">
+    <!-- Header -->
     <div class="dashboard-header">
-        <h1>Dashboard</h1>
+        <div class="header-content">
+            <h1>Welcome to Munday Reviews</h1>
+            <p class="subtitle">Discover and share authentic company experiences</p>
+        </div>
         <div class="header-actions">
-            <button routerLink="/reviews/create" class="btn btn-primary">
-                Write Review
+            <button routerLink="/reviews/create" class="btn-primary">
+                <i class="material-icons">add_circle</i>
+                <span>Share Your Experience</span>
+            </button>
+            <button routerLink="/organizations" class="btn-outline">
+                <i class="material-icons">search</i>
+                <span>Explore Companies</span>
             </button>
         </div>
     </div>
 
-    <div class="dashboard-content">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading your dashboard...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="error-state">
+        <i class="material-icons error-icon">error_outline</i>
+        <p class="error-message">{{ error }}</p>
+        <button class="btn-primary retry-button" (click)="loadDashboardData()">
+            <div class="button-content">
+                <i class="material-icons">refresh</i>
+                <span>Try Again</span>
+            </div>
+        </button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div *ngIf="!isLoading && !error" class="dashboard-content">
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="material-icons">rate_review</i>
+                </div>
+                <div class="stat-content">
+                    <h3>Total Reviews</h3>
+                    <p class="stat-value">{{ reviewStats.totalReviews || '0' }}</p>
+                    <p class="stat-trend positive" *ngIf="reviewStats.totalReviews > 0">
+                        <i class="material-icons">trending_up</i>
+                        <span>Growing community</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="material-icons">star</i>
+                </div>
+                <div class="stat-content">
+                    <h3>Average Rating</h3>
+                    <p class="stat-value">{{ reviewStats.averageRating.toFixed(1) || '0.0' }}</p>
+                    <p class="stat-trend" [class.positive]="reviewStats.averageRating >= 4" 
+                       [class.neutral]="reviewStats.averageRating >= 3 && reviewStats.averageRating < 4"
+                       [class.negative]="reviewStats.averageRating < 3">
+                        <i class="material-icons">{{ getAverageRatingIcon() }}</i>
+                        <span>{{ getAverageRatingText() }}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
         <div class="dashboard-grid">
             <!-- Recent Reviews -->
-            <div class="dashboard-card recent-reviews">
-                <h2>Recent Reviews</h2>
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2>
+                        <i class="material-icons">history</i>
+                        Recent Reviews
+                    </h2>
+                    <a routerLink="/reviews" class="view-all">
+                        View All
+                        <i class="material-icons">arrow_forward</i>
+                    </a>
+                </div>
                 <div class="card-content">
-                    <a routerLink="/reviews" class="view-all">View All Reviews →</a>
+                    <div *ngIf="recentReviews.length === 0" class="empty-state">
+                        <i class="material-icons">rate_review</i>
+                        <h3>No Reviews Yet</h3>
+                        <p>Be the first to share your experience and help others make informed decisions.</p>
+                        <button routerLink="/reviews/create" class="btn-primary">
+                            <i class="material-icons">add_circle</i>
+                            <span>Write First Review</span>
+                        </button>
+                    </div>
+                    <div *ngFor="let review of recentReviews" class="review-item" [routerLink]="['/reviews', review.id]">
+                        <div class="review-header">
+                            <h3>{{ review.title }}</h3>
+                            <div class="review-rating">
+                                <div class="stars">
+                                    <i class="material-icons" *ngFor="let star of getStarArray(review.rating)">
+                                        {{ star === 'full' ? 'star' : 'star_border' }}
+                                    </i>
+                                </div>
+                                <span class="rating-value">{{ review.rating }}.0</span>
+                            </div>
+                        </div>
+                        <p class="review-org">
+                            <i class="material-icons">business</i>
+                            {{ review.organization?.name }}
+                        </p>
+                        <p class="review-preview">{{ truncateText(review.content, 150) }}</p>
+                        <div class="review-meta">
+                            <span class="review-date">
+                                <i class="material-icons">schedule</i>
+                                {{ review.createdAt | date:'mediumDate' }}
+                            </span>
+                            <span class="review-author">
+                                <i class="material-icons">person</i>
+                                {{ review.user?.fullName || 'Anonymous' }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Top Organizations -->
-            <div class="dashboard-card top-organizations">
-                <h2>Top Organizations</h2>
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2>
+                        <i class="material-icons">business</i>
+                        Top Organizations
+                    </h2>
+                    <a routerLink="/organizations" class="view-all">
+                        View All
+                        <i class="material-icons">arrow_forward</i>
+                    </a>
+                </div>
                 <div class="card-content">
-                    <a routerLink="/organizations" class="view-all">View All Organizations →</a>
+                    <div *ngIf="topOrganizations.length === 0" class="empty-state">
+                        <i class="material-icons">business</i>
+                        <h3>No Organizations Yet</h3>
+                        <p>Add your company or explore existing organizations to start reviewing.</p>
+                        <button routerLink="/organizations/create" class="btn-primary">
+                            <i class="material-icons">add_circle</i>
+                            <span>Add Organization</span>
+                        </button>
+                    </div>
+                    <div *ngFor="let org of topOrganizations" class="org-item" [routerLink]="['/organizations', org.id]">
+                        <div class="org-logo" [class.placeholder-logo]="!org.logo">
+                            <img *ngIf="org.logo" [src]="org.logo" [alt]="org.name">
+                            <span *ngIf="!org.logo">{{ getOrgInitials(org.name) }}</span>
+                        </div>
+                        <div class="org-info">
+                            <h3>{{ org.name }}</h3>
+                            <div class="org-meta">
+                                <span class="org-industry">
+                                    <i class="material-icons">category</i>
+                                    {{ org.industry }}
+                                </span>
+                                <span class="org-location" *ngIf="org.location">
+                                    <i class="material-icons">location_on</i>
+                                    {{ org.location }}
+                                </span>
+                            </div>
+                            <div class="org-stats">
+                                <div class="org-rating">
+                                    <div class="stars">
+                                        <i class="material-icons" *ngFor="let star of getStarArray(org.averageRating)">
+                                            {{ star === 'full' ? 'star' : 'star_border' }}
+                                        </i>
+                                    </div>
+                                    <span class="rating-value">{{ org.averageRating.toFixed(1) || 'No ratings' }}</span>
+                                </div>
+                                <span class="review-count">
+                                    <i class="material-icons">rate_review</i>
+                                    {{ org.reviewCount }} {{ org.reviewCount === 1 ? 'review' : 'reviews' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

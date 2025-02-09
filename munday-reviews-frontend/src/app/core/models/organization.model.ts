@@ -1,19 +1,17 @@
 export interface Organization {
     id: string;
     name: string;
-    description?: string;
+    description: string;
+    industry: string;
+    location: string;
+    employeeCount: number;
     website?: string;
     logo?: string;
-    industry?: string;
-    size?: string;
-    location?: string;
-    employeeCount: number;
     status: 'active' | 'inactive';
-    isVerified: boolean;
-    verifiedBy?: string;
-    verifiedAt?: string;
-    averageRating?: number;
-    totalReviews?: number;
+    averageRating: number;
+    reviewCount: number;
+    averageSalary?: number;
+    interviewSuccessRate: number;
     createdAt: string;
-    updatedAt?: string;
+    updatedAt: string;
 } 

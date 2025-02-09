@@ -1,78 +1,95 @@
 import { Router } from 'express';
-import {
-    getAllReviews,
-    getReview,
-    createReview,
-    updateReview,
-    deleteReview,
-    moderateReview,
-    voteReviewHelpful,
-    reportReview
-} from '../controllers/review.controller';
-import { protect, restrictTo } from '../middleware/auth.middleware';
-import { validateRequest } from '../middleware/validate.middleware';
-import { body } from 'express-validator';
+import { Review } from '../models';
+import { auth } from '../middleware/auth';
 
 const router = Router();
 
-// Public routes
-router.get('/', getAllReviews);
-router.get('/:id', getReview);
+// Get all reviews
+router.get('/', async (req, res) => {
+    try {
+        const reviews = await Review.findAll({
+            where: req.query,
+            include: ['user', 'organization']
+        });
+        res.json(reviews);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch reviews' });
+    }
+});
 
-// Protected routes
-router.use(protect);
+// Get single review
+router.get('/:id', async (req, res) => {
+    try {
+        const review = await Review.findByPk(req.params.id, {
+            include: ['user', 'organization']
+        });
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+        res.json(review);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch review' });
+    }
+});
 
 // Create review
-router.post('/', [
-    body('organizationId')
-        .notEmpty().withMessage('Organization ID is required'),
-    body('content')
-        .notEmpty().withMessage('Review content is required')
-        .isLength({ min: 10 }).withMessage('Review must be at least 10 characters long')
-        .trim(),
-    body('rating')
-        .notEmpty().withMessage('Rating is required')
-        .isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
-    body('title')
-        .optional()
-        .trim(),
-    validateRequest
-], createReview);
+router.post('/', auth, async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
 
-// Update own review
-router.patch('/:id', [
-    body('content')
-        .optional()
-        .notEmpty().withMessage('Review content cannot be empty')
-        .isLength({ min: 10 }).withMessage('Review must be at least 10 characters long')
-        .trim(),
-    body('rating')
-        .optional()
-        .isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
-    validateRequest
-], updateReview);
+        const review = await Review.create({
+            ...req.body,
+            userId: req.user.id,
+            status: 'pending'
+        });
+        res.status(201).json(review);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to create review' });
+    }
+});
 
-// Delete own review
-router.delete('/:id', deleteReview);
+// Update review
+router.patch('/:id', auth, async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
 
-// Vote review as helpful
-router.post('/:id/helpful', voteReviewHelpful);
+        const review = await Review.findByPk(req.params.id);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+        if (review.userId !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+        await review.update(req.body);
+        res.json(review);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to update review' });
+    }
+});
 
-// Report review
-router.post('/:id/report', reportReview);
+// Delete review
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
 
-// Admin only routes
-router.use(restrictTo('admin'));
-
-// Moderate review
-router.patch('/:id/moderate', [
-    body('status')
-        .notEmpty().withMessage('Status is required')
-        .isIn(['pending', 'approved', 'rejected']).withMessage('Invalid status'),
-    body('moderationNotes')
-        .optional()
-        .trim(),
-    validateRequest
-], moderateReview);
+        const review = await Review.findByPk(req.params.id);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+        if (review.userId !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+        await review.destroy();
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to delete review' });
+    }
+});
 
 export default router; 

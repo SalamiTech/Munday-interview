@@ -1,19 +1,41 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./user.model"), exports);
-__exportStar(require("./organization.model"), exports);
-__exportStar(require("./review.model"), exports);
+exports.Organization = exports.Review = exports.User = void 0;
+exports.initializeModels = initializeModels;
+const user_model_1 = require("./user.model");
+Object.defineProperty(exports, "User", { enumerable: true, get: function () { return user_model_1.User; } });
+const review_model_1 = require("./review.model");
+Object.defineProperty(exports, "Review", { enumerable: true, get: function () { return review_model_1.Review; } });
+const organization_model_1 = require("./organization.model");
+Object.defineProperty(exports, "Organization", { enumerable: true, get: function () { return organization_model_1.Organization; } });
+const database_1 = __importDefault(require("../config/database"));
+const models = {
+    User: user_model_1.User,
+    Review: review_model_1.Review,
+    Organization: organization_model_1.Organization
+};
+async function initializeModels() {
+    try {
+        // Initialize each model with sequelize instance
+        Object.values(models).forEach(model => {
+            if (typeof model.initialize === 'function') {
+                model.initialize(database_1.default);
+            }
+        });
+        // Set up associations
+        Object.values(models).forEach(model => {
+            if (typeof model.associate === 'function') {
+                model.associate(models);
+            }
+        });
+        console.log('Models initialized successfully');
+    }
+    catch (error) {
+        console.error('Error initializing models:', error);
+        throw error;
+    }
+}
+exports.default = models;

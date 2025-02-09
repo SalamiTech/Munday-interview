@@ -1,87 +1,70 @@
 import { Router } from 'express';
-import {
-    getAllOrganizations,
-    getOrganization,
-    createOrganization,
-    updateOrganization,
-    deleteOrganization,
-    getOrganizationStats
-} from '../controllers/organization.controller';
-import { protect, restrictTo } from '../middleware/auth.middleware';
-import { validateRequest } from '../middleware/validate.middleware';
-import { body } from 'express-validator';
+import { Organization } from '../models';
+import { auth } from '../middleware/auth';
 
 const router = Router();
 
-// Public routes
-router.get('/', getAllOrganizations);
-router.get('/:id', getOrganization);
+// Get all organizations
+router.get('/', async (req, res) => {
+    try {
+        const organizations = await Organization.findAll({
+            where: req.query
+        });
+        res.json(organizations);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch organizations' });
+    }
+});
 
-// Protected routes
-router.use(protect);
+// Get single organization
+router.get('/:id', async (req, res) => {
+    try {
+        const organization = await Organization.findByPk(req.params.id);
+        if (!organization) {
+            return res.status(404).json({ message: 'Organization not found' });
+        }
+        res.json(organization);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch organization' });
+    }
+});
 
-// Admin only routes
-router.use(restrictTo('admin'));
+// Create organization
+router.post('/', auth, async (req, res) => {
+    try {
+        const organization = await Organization.create(req.body);
+        res.status(201).json(organization);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to create organization' });
+    }
+});
 
-router.get('/stats/industry', getOrganizationStats);
+// Update organization
+router.patch('/:id', auth, async (req, res) => {
+    try {
+        const organization = await Organization.findByPk(req.params.id);
+        if (!organization) {
+            return res.status(404).json({ message: 'Organization not found' });
+        }
+        await organization.update(req.body);
+        res.json(organization);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to update organization' });
+    }
+});
 
-router.post('/', [
-    body('name')
-        .notEmpty().withMessage('Organization name is required')
-        .trim(),
-    body('description')
-        .notEmpty().withMessage('Description is required')
-        .trim(),
-    body('industry')
-        .notEmpty().withMessage('Industry is required')
-        .trim(),
-    body('location')
-        .notEmpty().withMessage('Location is required')
-        .trim(),
-    body('employeeCount')
-        .notEmpty().withMessage('Employee count is required')
-        .isInt({ min: 1 }).withMessage('Employee count must be at least 1'),
-    body('website')
-        .optional()
-        .isURL().withMessage('Please provide a valid URL'),
-    body('logo')
-        .optional()
-        .isURL().withMessage('Please provide a valid URL for logo'),
-    validateRequest
-], createOrganization);
-
-router.patch('/:id', [
-    body('name')
-        .optional()
-        .notEmpty().withMessage('Organization name cannot be empty')
-        .trim(),
-    body('description')
-        .optional()
-        .notEmpty().withMessage('Description cannot be empty')
-        .trim(),
-    body('industry')
-        .optional()
-        .notEmpty().withMessage('Industry cannot be empty')
-        .trim(),
-    body('location')
-        .optional()
-        .notEmpty().withMessage('Location cannot be empty')
-        .trim(),
-    body('employeeCount')
-        .optional()
-        .isInt({ min: 1 }).withMessage('Employee count must be at least 1'),
-    body('website')
-        .optional()
-        .isURL().withMessage('Please provide a valid URL'),
-    body('logo')
-        .optional()
-        .isURL().withMessage('Please provide a valid URL for logo'),
-    body('status')
-        .optional()
-        .isIn(['active', 'inactive']).withMessage('Status must be either active or inactive'),
-    validateRequest
-], updateOrganization);
-
-router.delete('/:id', deleteOrganization);
+// Delete organization
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const organization = await Organization.findByPk(req.params.id);
+        if (!organization) {
+            return res.status(404).json({ message: 'Organization not found' });
+        }
+        await organization.destroy();
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to delete organization' });
+    }
+});
 
 export default router; 

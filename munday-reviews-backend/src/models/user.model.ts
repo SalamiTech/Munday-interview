@@ -1,10 +1,10 @@
-import { Table, Model, Column, DataType, BeforeCreate, BeforeUpdate, BeforeSave } from 'sequelize-typescript';
-import { BaseAttributes } from '../interfaces/base.interface';
+import { Model, DataTypes, Sequelize } from 'sequelize';
 import bcrypt from 'bcryptjs';
 
-interface UserAttributes extends BaseAttributes {
+export interface UserAttributes {
+    id: number;
     email: string;
-    password: string;
+    password?: string;
     firstName: string;
     lastName: string;
     fullName?: string;
@@ -12,83 +12,110 @@ interface UserAttributes extends BaseAttributes {
     role: 'user' | 'admin';
     isActive: boolean;
     lastLogin?: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
-@Table({
-    tableName: 'users',
-    paranoid: true,
-    timestamps: true
-})
-export class User extends Model<UserAttributes> {
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-        unique: true,
-        validate: {
-            isEmail: true
-        }
-    })
-    email!: string;
+export interface UserCreationAttributes extends Omit<UserAttributes, 'id' | 'fullName' | 'createdAt' | 'updatedAt'> {}
 
-    @Column({
-        type: DataType.STRING,
-        allowNull: false
-    })
-    password!: string;
-
-    @Column({
-        type: DataType.STRING,
-        allowNull: false
-    })
-    firstName!: string;
-
-    @Column({
-        type: DataType.STRING,
-        allowNull: false
-    })
-    lastName!: string;
-
-    @Column({
-        type: DataType.STRING
-    })
-    fullName!: string;
-
-    @Column({
-        type: DataType.STRING
-    })
-    avatar?: string;
-
-    @Column({
-        type: DataType.ENUM('user', 'admin'),
-        defaultValue: 'user'
-    })
-    role!: 'user' | 'admin';
-
-    @Column({
-        type: DataType.BOOLEAN,
-        defaultValue: true
-    })
-    isActive!: boolean;
-
-    @Column({
-        type: DataType.DATE
-    })
-    lastLogin?: Date;
-
-    @BeforeSave
-    static async hashPassword(instance: User) {
-        if (instance.changed('password')) {
-            const salt = await bcrypt.genSalt(10);
-            instance.password = await bcrypt.hash(instance.password, salt);
-        }
-    }
-
-    @BeforeSave
-    static setFullName(instance: User) {
-        instance.fullName = `${instance.firstName} ${instance.lastName}`;
-    }
+export class User extends Model<UserAttributes, UserCreationAttributes> {
+    declare id: number;
+    declare email: string;
+    declare password?: string;
+    declare firstName: string;
+    declare lastName: string;
+    declare fullName?: string;
+    declare avatar?: string;
+    declare role: 'user' | 'admin';
+    declare isActive: boolean;
+    declare lastLogin?: Date;
+    declare createdAt: Date;
+    declare updatedAt: Date;
 
     async comparePassword(candidatePassword: string): Promise<boolean> {
+        if (!this.password) return false;
         return bcrypt.compare(candidatePassword, this.password);
     }
-} 
+
+    toJSON(): Partial<UserAttributes> {
+        const values = super.toJSON() as UserAttributes;
+        delete values.password;
+        return values;
+    }
+
+    static initialize(sequelize: Sequelize) {
+        User.init({
+            id: {
+                type: DataTypes.INTEGER,
+                autoIncrement: true,
+                primaryKey: true,
+            },
+            email: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                unique: true,
+                validate: {
+                    isEmail: true,
+                },
+            },
+            password: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                set(value: string) {
+                    const salt = bcrypt.genSaltSync(10);
+                    this.setDataValue('password', bcrypt.hashSync(value, salt));
+                },
+            },
+            firstName: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            lastName: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            fullName: {
+                type: DataTypes.VIRTUAL,
+                get() {
+                    return `${this.firstName} ${this.lastName}`;
+                },
+            },
+            avatar: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            role: {
+                type: DataTypes.ENUM('user', 'admin'),
+                allowNull: false,
+                defaultValue: 'user',
+            },
+            isActive: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+            },
+            lastLogin: {
+                type: DataTypes.DATE,
+                allowNull: true,
+            },
+        }, {
+            sequelize,
+            tableName: 'users',
+            timestamps: true,
+            defaultScope: {
+                attributes: { exclude: ['password'] },
+            },
+            scopes: {
+                withPassword: {
+                    attributes: { include: ['password'] },
+                },
+            },
+        });
+    }
+
+    static associate(models: any) {
+        // Define associations here if needed
+    }
+}
+
+export type UserModel = typeof User; 

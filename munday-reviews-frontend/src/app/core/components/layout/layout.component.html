@@ -4,7 +4,6 @@
         <div class="nav-content">
             <!-- Logo -->
             <a routerLink="/dashboard" class="logo">
-                <img src="assets/logo.png" alt="Munday Reviews" class="logo-img">
                 <span class="logo-text">Munday Reviews</span>
             </a>
 
@@ -14,27 +13,32 @@
                    routerLinkActive="active" 
                    [routerLinkActiveOptions]="{exact: true}"
                    class="nav-link">
-                    Dashboard
+                    <i class="material-icons">dashboard</i>
+                    <span>Dashboard</span>
                 </a>
                 <a routerLink="/reviews" 
                    routerLinkActive="active" 
                    class="nav-link">
-                    Reviews
+                    <i class="material-icons">rate_review</i>
+                    <span>Reviews</span>
                 </a>
                 <a routerLink="/organizations" 
                    routerLinkActive="active" 
                    class="nav-link">
-                    Organizations
+                    <i class="material-icons">business</i>
+                    <span>Organizations</span>
                 </a>
             </div>
 
             <!-- User Menu -->
             <div class="user-menu">
-                <button class="btn btn-primary" routerLink="/reviews/create">
-                    Write Review
+                <button class="btn-primary" routerLink="/reviews/create">
+                    <i class="material-icons">edit</i>
+                    <span>Write Review</span>
                 </button>
-                <button class="btn btn-text" (click)="onLogout()">
-                    Sign Out
+                <button class="btn-text" (click)="onLogout()">
+                    <i class="material-icons">logout</i>
+                    <span>Sign Out</span>
                 </button>
             </div>
         </div>

@@ -1,0 +1,206 @@
+<div class="min-h-screen bg-surface-secondary px-4 py-8 md:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-primary-900 md:text-3xl">Organizations</h1>
+            <p class="mt-1 text-sm text-primary-600">Find and review the best companies to work for</p>
+        </div>
+        <a routerLink="/organizations/new" class="btn-primary">
+            Add Organization
+        </a>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex flex-col items-center justify-center space-y-4 py-12">
+        <div class="h-12 w-12 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div>
+        <p class="text-primary-600 font-medium">Loading organizations...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="mx-auto max-w-md rounded-lg bg-error-light p-6 text-center">
+        <p class="mb-4 text-error-dark">{{ error }}</p>
+        <button class="btn-primary" (click)="loadOrganizations()">
+            Try Again
+        </button>
+    </div>
+
+    <!-- Content -->
+    <ng-container *ngIf="!isLoading && !error">
+        <!-- Filters -->
+        <div class="mb-8 rounded-xl bg-surface-DEFAULT p-6 shadow-sm">
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <!-- Search -->
+                <div class="relative">
+                    <input type="text" [formControl]="searchControl"
+                           class="input pl-10" 
+                           placeholder="Search organizations...">
+                    <svg class="absolute left-3 top-2.5 h-5 w-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+
+                <!-- Industry Filter -->
+                <select [formControl]="industryControl" class="select">
+                    <option value="">All Industries</option>
+                    <option *ngFor="let industry of industries" [value]="industry.value">
+                        {{ industry.label }}
+                    </option>
+                </select>
+
+                <!-- Rating Filter -->
+                <select [formControl]="ratingControl" class="select">
+                    <option value="">Any Rating</option>
+                    <option *ngFor="let rating of ratings" [value]="rating.value">
+                        {{ rating.label }}
+                    </option>
+                </select>
+
+                <!-- Status Filter -->
+                <select [formControl]="statusControl" class="select">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+
+            <!-- Active Filters -->
+            <div class="mt-4 flex flex-wrap gap-2" *ngIf="searchControl.value || industryControl.value || ratingControl.value || statusControl.value">
+                <div *ngIf="searchControl.value" 
+                     class="badge bg-primary-100 text-primary-700">
+                    Search: {{ searchControl.value }}
+                    <button class="ml-2" (click)="searchControl.reset()">×</button>
+                </div>
+                <div *ngIf="industryControl.value" 
+                     class="badge bg-primary-100 text-primary-700">
+                    {{ getIndustryLabel(industryControl.value) }}
+                    <button class="ml-2" (click)="industryControl.reset()">×</button>
+                </div>
+                <div *ngIf="ratingControl.value" 
+                     class="badge bg-primary-100 text-primary-700">
+                    {{ ratingControl.value }}+ Stars
+                    <button class="ml-2" (click)="ratingControl.reset()">×</button>
+                </div>
+                <div *ngIf="statusControl.value" 
+                     class="badge bg-primary-100 text-primary-700">
+                    Status: {{ statusControl.value }}
+                    <button class="ml-2" (click)="statusControl.reset()">×</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Organizations Grid -->
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" *ngIf="filteredOrganizations.length > 0">
+            <div *ngFor="let org of filteredOrganizations; trackBy: trackByOrganizationId"
+                 class="card group">
+                <!-- Organization Header -->
+                <div class="p-6">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 overflow-hidden rounded-lg bg-primary-50">
+                                <img *ngIf="org.logo" [src]="org.logo" [alt]="org.name" 
+                                     class="h-full w-full object-cover">
+                                <div *ngIf="!org.logo" 
+                                     class="flex h-full items-center justify-center bg-primary-100 text-xl font-bold text-primary-600">
+                                    {{ org.name.charAt(0) }}
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-primary-900">{{ org.name }}</h3>
+                                <p class="text-sm text-primary-600">{{ org.industry }}</p>
+                            </div>
+                        </div>
+                        <div class="badge" [ngClass]="{
+                            'bg-success-light text-success-dark': org.status === 'active',
+                            'bg-error-light text-error-dark': org.status === 'inactive'
+                        }">
+                            {{ org.status }}
+                        </div>
+                    </div>
+
+                    <!-- Organization Info -->
+                    <p class="mt-4 line-clamp-2 text-sm text-primary-600">{{ org.description }}</p>
+
+                    <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <p class="text-sm font-medium text-primary-900">{{ org.averageRating.toFixed(1) }}</p>
+                            <p class="text-xs text-primary-600">Rating</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-primary-900">{{ org.reviewCount }}</p>
+                            <p class="text-xs text-primary-600">Reviews</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-primary-900">{{ org.employeeCount.toLocaleString() }}</p>
+                            <p class="text-xs text-primary-600">Employees</p>
+                        </div>
+                    </div>
+
+                    <!-- Rating Stars -->
+                    <div class="mt-4 flex items-center gap-1">
+                        <div class="flex text-warning-DEFAULT">
+                            <span *ngFor="let star of [1,2,3,4,5]" 
+                                  class="text-lg"
+                                  [class.text-warning-light]="org.averageRating < star">
+                                ★
+                            </span>
+                        </div>
+                        <span class="ml-2 text-sm text-primary-600">
+                            {{ org.reviewCount }} reviews
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card Actions -->
+                <div class="border-t border-primary-100 p-4">
+                    <div class="flex justify-between gap-4">
+                        <a [routerLink]="['/organizations', org.id]" 
+                           class="btn-outline flex-1 text-center">
+                            View Details
+                        </a>
+                        <a [routerLink]="['/reviews/new']" 
+                           [queryParams]="{organizationId: org.id}"
+                           class="btn-primary flex-1 text-center">
+                            Write Review
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="filteredOrganizations.length === 0 && !isLoading" 
+             class="flex flex-col items-center justify-center rounded-lg bg-surface-DEFAULT py-12 text-center">
+            <svg class="h-12 w-12 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+            <h3 class="mt-4 text-lg font-medium text-primary-900">No organizations found</h3>
+            <p class="mt-1 text-sm text-primary-600">Try adjusting your filters or add a new organization</p>
+            <a routerLink="/organizations/new" class="btn-primary mt-4">
+                Add Organization
+            </a>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-8 flex items-center justify-between border-t border-primary-200 pt-4">
+            <div class="flex items-center gap-2">
+                <button class="btn-outline"
+                        [disabled]="currentPage === 1"
+                        (click)="onPageChange(currentPage - 1)">
+                    Previous
+                </button>
+                <span class="text-sm text-primary-600">
+                    Page {{ currentPage }} of {{ totalPages }}
+                </span>
+                <button class="btn-outline"
+                        [disabled]="currentPage === totalPages"
+                        (click)="onPageChange(currentPage + 1)">
+                    Next
+                </button>
+            </div>
+            <div class="text-sm text-primary-600">
+                Showing {{ filteredOrganizations.length }} organizations
+            </div>
+        </div>
+    </ng-container>
+</div> 

@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReviewService } from '../../../../core/services/review.service';
 import { OrganizationService } from '../../../../core/services/organization.service';
 import { Review } from '../../../../core/models/review.model';
 import { Organization } from '../../../../core/models/organization.model';
+import { Subject, takeUntil, catchError } from 'rxjs';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -14,7 +15,7 @@ import { forkJoin } from 'rxjs';
     templateUrl: './dashboard-home.component.html',
     styleUrls: ['./dashboard-home.component.scss']
 })
-export class DashboardHomeComponent implements OnInit {
+export class DashboardHomeComponent implements OnInit, OnDestroy {
     recentReviews: Review[] = [];
     topOrganizations: Organization[] = [];
     reviewStats: {
@@ -24,10 +25,18 @@ export class DashboardHomeComponent implements OnInit {
     } = {
         totalReviews: 0,
         averageRating: 0,
-        ratingDistribution: {}
+        ratingDistribution: {
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0,
+            5: 0
+        }
     };
     isLoading = true;
     error = '';
+
+    private destroy$ = new Subject<void>();
 
     constructor(
         private reviewService: ReviewService,
@@ -38,7 +47,12 @@ export class DashboardHomeComponent implements OnInit {
         this.loadDashboardData();
     }
 
-    private loadDashboardData(): void {
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    loadDashboardData(): void {
         this.isLoading = true;
         this.error = '';
 
@@ -46,20 +60,29 @@ export class DashboardHomeComponent implements OnInit {
             reviews: this.reviewService.getReviews({ 
                 page: 1, 
                 limit: 5,
-                sort: 'createdAt:DESC'
+                sort: 'createdAt:desc',
+                status: 'approved'
             }),
             organizations: this.organizationService.getTopOrganizations(5),
             stats: this.reviewService.getReviewStats()
-        }).subscribe({
-            next: (data) => {
+        }).pipe(
+            takeUntil(this.destroy$),
+            catchError(error => {
+                console.error('Error loading dashboard data:', error);
+                this.error = 'Failed to load dashboard data. Please try again.';
+                this.isLoading = false;
+                throw error;
+            })
+        ).subscribe({
+            next: (data: any) => {  // Type as any temporarily to handle response structure
                 this.recentReviews = data.reviews.items;
-                this.topOrganizations = data.organizations;
-                this.reviewStats = data.stats;
+                this.topOrganizations = Array.isArray(data.organizations) ? data.organizations : 
+                    (data.organizations?.organizations || []);
+                this.reviewStats = data.stats?.stats || data.stats || this.reviewStats;
                 this.isLoading = false;
             },
-            error: (error) => {
-                this.error = error.message;
-                this.isLoading = false;
+            error: () => {
+                // Error already handled in catchError
             }
         });
     }
@@ -75,5 +98,41 @@ export class DashboardHomeComponent implements OnInit {
         if (rating >= 4) return 'success';
         if (rating >= 3) return 'warning';
         return 'error';
+    }
+
+    getAverageRatingIcon(): string {
+        const rating = this.reviewStats.averageRating;
+        if (rating >= 4) return 'trending_up';
+        if (rating >= 3) return 'trending_flat';
+        return 'trending_down';
+    }
+
+    getAverageRatingText(): string {
+        const rating = this.reviewStats.averageRating;
+        if (rating >= 4) return 'Excellent ratings';
+        if (rating >= 3) return 'Good ratings';
+        if (rating > 0) return 'Needs improvement';
+        return 'No ratings yet';
+    }
+
+    getStarArray(rating: number = 0): ('full' | 'empty')[] {
+        const roundedRating = Math.round(rating);
+        return Array(5).fill('empty').map((_, index) => 
+            index < roundedRating ? 'full' : 'empty'
+        );
+    }
+
+    getOrgInitials(name: string): string {
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase();
+    }
+
+    truncateText(text: string, maxLength: number = 150): string {
+        if (!text) return '';
+        return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
     }
 } 

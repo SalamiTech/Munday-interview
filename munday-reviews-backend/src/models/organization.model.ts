@@ -1,90 +1,132 @@
-import { Table, Model, Column, DataType, HasMany, BelongsTo } from 'sequelize-typescript';
-import { BaseAttributes } from '../interfaces/base.interface';
-import { Review } from './review.model';
+import { Model, DataTypes, Sequelize } from 'sequelize';
 import { User } from './user.model';
+import { Review } from './review.model';
 
-interface OrganizationAttributes extends BaseAttributes {
+export interface OrganizationAttributes {
+    id: number;
     name: string;
-    description?: string;
+    description: string;
+    industry: string;
+    location: string;
+    employeeCount: number;
     website?: string;
     logo?: string;
-    industry?: string;
-    size?: string;
-    location?: string;
-    isVerified: boolean;
+    status: 'active' | 'inactive';
+    averageRating: number;
+    reviewCount: number;
+    averageSalary?: number;
+    interviewSuccessRate: number;
     verifiedBy?: number;
-    verifiedAt?: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
-@Table({
-    tableName: 'organizations',
-    paranoid: true,
-    timestamps: true
-})
-export class Organization extends Model<OrganizationAttributes> {
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-        unique: true
-    })
-    name!: string;
+export interface OrganizationCreationAttributes extends Omit<OrganizationAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
-    @Column({
-        type: DataType.TEXT
-    })
-    description?: string;
+export class Organization extends Model<OrganizationAttributes, OrganizationCreationAttributes> {
+    declare id: number;
+    declare name: string;
+    declare description: string;
+    declare industry: string;
+    declare location: string;
+    declare employeeCount: number;
+    declare website?: string;
+    declare logo?: string;
+    declare status: 'active' | 'inactive';
+    declare averageRating: number;
+    declare reviewCount: number;
+    declare averageSalary?: number;
+    declare interviewSuccessRate: number;
+    declare verifiedBy?: number;
+    declare createdAt: Date;
+    declare updatedAt: Date;
 
-    @Column({
-        type: DataType.STRING,
-        validate: {
-            isUrl: true
-        }
-    })
-    website?: string;
+    static associate(models: { User: typeof User; Review: typeof Review }) {
+        Organization.hasMany(models.Review, {
+            foreignKey: 'organizationId',
+            as: 'reviews'
+        });
+        Organization.belongsTo(models.User, {
+            foreignKey: 'verifiedBy',
+            as: 'verifier'
+        });
+    }
 
-    @Column({
-        type: DataType.STRING
-    })
-    logo?: string;
+    static initialize(sequelize: Sequelize) {
+        Organization.init({
+            id: {
+                type: DataTypes.INTEGER,
+                autoIncrement: true,
+                primaryKey: true,
+            },
+            name: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                unique: true,
+            },
+            description: {
+                type: DataTypes.TEXT,
+                allowNull: false,
+            },
+            industry: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            location: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            employeeCount: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+            },
+            website: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            logo: {
+                type: DataTypes.STRING,
+                allowNull: true,
+            },
+            status: {
+                type: DataTypes.ENUM('active', 'inactive'),
+                allowNull: false,
+                defaultValue: 'active',
+            },
+            averageRating: {
+                type: DataTypes.FLOAT,
+                allowNull: false,
+                defaultValue: 0,
+            },
+            reviewCount: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+            },
+            averageSalary: {
+                type: DataTypes.FLOAT,
+                allowNull: true,
+            },
+            interviewSuccessRate: {
+                type: DataTypes.FLOAT,
+                allowNull: false,
+                defaultValue: 0,
+            },
+            verifiedBy: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                references: {
+                    model: 'users',
+                    key: 'id',
+                },
+            },
+        }, {
+            sequelize,
+            tableName: 'organizations',
+            timestamps: true,
+        });
+    }
+}
 
-    @Column({
-        type: DataType.STRING
-    })
-    industry?: string;
-
-    @Column({
-        type: DataType.ENUM('1-10', '11-50', '51-200', '201-500', '501-1000', '1000+')
-    })
-    size?: string;
-
-    @Column({
-        type: DataType.STRING
-    })
-    location?: string;
-
-    @Column({
-        type: DataType.BOOLEAN,
-        defaultValue: false
-    })
-    isVerified!: boolean;
-
-    @Column({
-        type: DataType.INTEGER,
-        references: {
-            model: User,
-            key: 'id'
-        }
-    })
-    verifiedBy?: number;
-
-    @Column({
-        type: DataType.DATE
-    })
-    verifiedAt?: Date;
-
-    @HasMany(() => Review)
-    reviews!: Review[];
-
-    @BelongsTo(() => User, 'verifiedBy')
-    verifier?: User;
-} 
+export type OrganizationModel = typeof Organization; 

@@ -1,126 +1,185 @@
-<div class="details-container">
+<!-- Main Container -->
+<div class="min-h-screen bg-surface-secondary px-4 py-8 md:px-6 lg:px-8">
     <!-- Loading State -->
-    <div *ngIf="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading organization details...</p>
+    <div *ngIf="isLoading" class="flex flex-col items-center justify-center space-y-4 py-12">
+        <div class="h-12 w-12 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div>
+        <p class="text-primary-600 font-medium">Loading organization details...</p>
     </div>
 
     <!-- Error State -->
-    <div *ngIf="error" class="error-state">
-        <p>{{ error }}</p>
-        <button class="btn btn-primary" (click)="loadOrganization(organization?.id!)">
+    <div *ngIf="error" class="mx-auto max-w-md rounded-lg bg-error-light p-6 text-center">
+        <p class="mb-4 text-error-dark">{{ error }}</p>
+        <button class="btn-primary" (click)="loadOrganizationData(organization?.id!)">
             Try Again
         </button>
     </div>
 
     <!-- Organization Details -->
     <ng-container *ngIf="!isLoading && !error && organization">
-        <!-- Header -->
-        <div class="details-header">
-            <div class="header-content">
-                <h1>{{ organization.name }}</h1>
-                <div class="meta-info">
-                    <span class="industry">{{ organization.industry }}</span>
-                    <span class="location">{{ organization.location }}</span>
-                    <span class="status" [class]="organization.status">
-                        {{ organization.status }}
-                    </span>
+        <!-- Header Section -->
+        <div class="mb-8 rounded-xl bg-surface-DEFAULT p-6 shadow-sm">
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="space-y-4">
+                    <!-- Organization Logo & Name -->
+                    <div class="flex items-center gap-4">
+                        <div class="h-16 w-16 overflow-hidden rounded-lg bg-primary-50">
+                            <img *ngIf="organization.logo" [src]="organization.logo" [alt]="organization.name" 
+                                 class="h-full w-full object-cover">
+                            <div *ngIf="!organization.logo" class="flex h-full items-center justify-center bg-primary-100 text-2xl font-bold text-primary-600">
+                                {{ organization.name.charAt(0) }}
+                            </div>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-primary-900 md:text-3xl">{{ organization.name }}</h1>
+                            <div class="flex flex-wrap gap-3 text-sm text-primary-600">
+                                <span class="flex items-center gap-1">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                    </svg>
+                                    {{ organization.industry }}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    {{ organization.location }}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    {{ organization.employeeCount }} employees
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button class="btn-outline" (click)="onShare()">
+                        Share
+                    </button>
+                    <button class="btn-primary" (click)="onWriteReview()">
+                        Write Review
+                    </button>
                 </div>
             </div>
-            <button class="btn btn-primary" (click)="onWriteReview()">
-                Write Review
-            </button>
         </div>
 
-        <!-- Overview -->
-        <div class="overview-section">
-            <div class="overview-grid">
-                <!-- Rating Card -->
-                <div class="overview-card rating-card">
-                    <div class="rating-header">
-                        <h3>Overall Rating</h3>
-                        <div class="rating-value">
-                            {{ organization.averageRating.toFixed(1) }}
-                        </div>
-                    </div>
-                    <div class="rating-stars">
+        <!-- Stats Grid -->
+        <div class="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <!-- Overall Rating -->
+            <div class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
+                <div class="mb-2 text-sm font-medium text-primary-600">Overall Rating</div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-bold text-primary-900">
+                        {{ organization.averageRating.toFixed(1) }}
+                    </span>
+                    <div class="flex text-warning-DEFAULT">
                         <span *ngFor="let star of [1,2,3,4,5]" 
-                              class="star"
-                              [class.filled]="organization.averageRating >= star">
-                            {{ organization.averageRating >= star ? '★' : '☆' }}
+                              class="text-lg"
+                              [class.text-warning-light]="organization.averageRating < star">
+                            ★
                         </span>
                     </div>
-                    <p class="total-reviews">
-                        Based on {{ organization.totalReviews }} reviews
-                    </p>
-                </div>
-
-                <!-- Info Card -->
-                <div class="overview-card info-card">
-                    <h3>Company Info</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="label">Industry</span>
-                            <span class="value">{{ organization.industry }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Location</span>
-                            <span class="value">{{ organization.location }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Employees</span>
-                            <span class="value">{{ organization.employeeCount.toLocaleString() }}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Founded</span>
-                            <span class="value">{{ organization.createdAt | date:'mediumDate' }}</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <div class="description-card">
-                <h3>About</h3>
-                <p>{{ organization.description }}</p>
+            <!-- Review Count -->
+            <div class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
+                <div class="mb-2 text-sm font-medium text-primary-600">Total Reviews</div>
+                <div class="text-3xl font-bold text-primary-900">
+                    {{ organization.reviewCount }}
+                </div>
             </div>
+
+            <!-- Average Salary -->
+            <div class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
+                <div class="mb-2 text-sm font-medium text-primary-600">Avg. Salary</div>
+                <div class="text-3xl font-bold text-primary-900">
+                    ${{ organization.averageSalary?.toLocaleString() || 'N/A' }}
+                </div>
+            </div>
+
+            <!-- Interview Success Rate -->
+            <div class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
+                <div class="mb-2 text-sm font-medium text-primary-600">Interview Success</div>
+                <div class="text-3xl font-bold text-primary-900">
+                    {{ (organization.interviewSuccessRate * 100).toFixed(0) }}%
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating Distribution -->
+        <div class="mb-8">
+            <app-rating-chart
+                [ratingDistribution]="ratingDistribution"
+                [title]="'Rating Distribution'"
+            ></app-rating-chart>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-8 rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
+            <h2 class="mb-4 text-xl font-semibold text-primary-900">About</h2>
+            <p class="text-primary-600">{{ organization.description }}</p>
         </div>
 
         <!-- Reviews Section -->
-        <div class="reviews-section">
-            <h2>Reviews</h2>
+        <div class="space-y-6">
+            <h2 class="text-xl font-semibold text-primary-900">Reviews</h2>
             
-            <div class="reviews-grid">
-                <div *ngFor="let review of reviews" class="review-card">
-                    <div class="review-header">
-                        <div class="user-info">
-                            <h4>{{ review.userName }}</h4>
-                            <span class="date">{{ review.createdAt | date }}</span>
+            <!-- Reviews List -->
+            <div class="space-y-4">
+                <div *ngFor="let review of reviews" class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
+                    <div class="mb-4 flex items-start justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <div class="flex text-warning-DEFAULT">
+                                    <span *ngFor="let star of [1,2,3,4,5]" 
+                                          class="text-lg"
+                                          [class.text-warning-light]="review.rating < star">
+                                        ★
+                                    </span>
+                                </div>
+                                <span class="text-sm text-primary-600">
+                                    {{ review.createdAt | date }}
+                                </span>
+                            </div>
+                            <h3 class="mt-2 font-medium text-primary-900">{{ review.title }}</h3>
                         </div>
-                        <span class="status-chip" [class]="review.status">
-                            {{ review.status }}
-                        </span>
                     </div>
+                    
+                    <p class="text-primary-600">{{ review.content }}</p>
 
-                    <div class="rating">
-                        <div class="stars">
-                            <span *ngFor="let star of [1,2,3,4,5]" 
-                                  class="star"
-                                  [class.filled]="review.rating >= star">
-                                {{ review.rating >= star ? '★' : '☆' }}
-                            </span>
+                    <!-- Pros & Cons -->
+                    <div *ngIf="review.pros?.length || review.cons?.length" class="mt-4 grid gap-4 md:grid-cols-2">
+                        <div *ngIf="review.pros?.length" class="space-y-2">
+                            <h4 class="font-medium text-success-dark">Pros</h4>
+                            <ul class="list-inside list-disc space-y-1 text-primary-600">
+                                <li *ngFor="let pro of review.pros">{{ pro }}</li>
+                            </ul>
                         </div>
-                        <span class="rating-value">{{ review.rating }}/5</span>
+                        <div *ngIf="review.cons?.length" class="space-y-2">
+                            <h4 class="font-medium text-error-dark">Cons</h4>
+                            <ul class="list-inside list-disc space-y-1 text-primary-600">
+                                <li *ngFor="let con of review.cons">{{ con }}</li>
+                            </ul>
+                        </div>
                     </div>
-
-                    <p class="review-content">{{ review.content }}</p>
                 </div>
             </div>
 
             <!-- Empty State -->
-            <div *ngIf="reviews.length === 0" class="empty-state">
-                <p>No reviews yet</p>
-                <button class="btn btn-primary" (click)="onWriteReview()">
-                    Write First Review
+            <div *ngIf="reviews.length === 0" class="rounded-lg bg-surface-DEFAULT p-8 text-center">
+                <p class="text-primary-600">No reviews yet. Be the first to write a review!</p>
+                <button class="btn-primary mt-4" (click)="onWriteReview()">
+                    Write Review
                 </button>
             </div>
         </div>

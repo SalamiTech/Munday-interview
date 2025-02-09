@@ -1,60 +1,95 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const review_controller_1 = require("../controllers/review.controller");
-const auth_middleware_1 = require("../middleware/auth.middleware");
-const validate_middleware_1 = require("../middleware/validate.middleware");
-const express_validator_1 = require("express-validator");
+const models_1 = require("../models");
+const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
-// Public routes
-router.get('/', review_controller_1.getAllReviews);
-router.get('/:id', review_controller_1.getReview);
-// Protected routes
-router.use(auth_middleware_1.protect);
+// Get all reviews
+router.get('/', async (req, res) => {
+    try {
+        const reviews = await models_1.Review.findAll({
+            where: req.query,
+            include: ['user', 'organization']
+        });
+        res.json(reviews);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to fetch reviews' });
+    }
+});
+// Get single review
+router.get('/:id', async (req, res) => {
+    try {
+        const review = await models_1.Review.findByPk(req.params.id, {
+            include: ['user', 'organization']
+        });
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+        res.json(review);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to fetch review' });
+    }
+});
 // Create review
-router.post('/', [
-    (0, express_validator_1.body)('organizationId')
-        .notEmpty().withMessage('Organization ID is required'),
-    (0, express_validator_1.body)('content')
-        .notEmpty().withMessage('Review content is required')
-        .isLength({ min: 10 }).withMessage('Review must be at least 10 characters long')
-        .trim(),
-    (0, express_validator_1.body)('rating')
-        .notEmpty().withMessage('Rating is required')
-        .isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
-    (0, express_validator_1.body)('title')
-        .optional()
-        .trim(),
-    validate_middleware_1.validateRequest
-], review_controller_1.createReview);
-// Update own review
-router.patch('/:id', [
-    (0, express_validator_1.body)('content')
-        .optional()
-        .notEmpty().withMessage('Review content cannot be empty')
-        .isLength({ min: 10 }).withMessage('Review must be at least 10 characters long')
-        .trim(),
-    (0, express_validator_1.body)('rating')
-        .optional()
-        .isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
-    validate_middleware_1.validateRequest
-], review_controller_1.updateReview);
-// Delete own review
-router.delete('/:id', review_controller_1.deleteReview);
-// Vote review as helpful
-router.post('/:id/helpful', review_controller_1.voteReviewHelpful);
-// Report review
-router.post('/:id/report', review_controller_1.reportReview);
-// Admin only routes
-router.use((0, auth_middleware_1.restrictTo)('admin'));
-// Moderate review
-router.patch('/:id/moderate', [
-    (0, express_validator_1.body)('status')
-        .notEmpty().withMessage('Status is required')
-        .isIn(['pending', 'approved', 'rejected']).withMessage('Invalid status'),
-    (0, express_validator_1.body)('moderationNotes')
-        .optional()
-        .trim(),
-    validate_middleware_1.validateRequest
-], review_controller_1.moderateReview);
+router.post('/', auth_1.auth, async (req, res) => {
+    var _a;
+    try {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.id)) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+        const review = await models_1.Review.create({
+            ...req.body,
+            userId: req.user.id,
+            status: 'pending'
+        });
+        res.status(201).json(review);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to create review' });
+    }
+});
+// Update review
+router.patch('/:id', auth_1.auth, async (req, res) => {
+    var _a;
+    try {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.id)) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+        const review = await models_1.Review.findByPk(req.params.id);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+        if (review.userId !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+        await review.update(req.body);
+        res.json(review);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to update review' });
+    }
+});
+// Delete review
+router.delete('/:id', auth_1.auth, async (req, res) => {
+    var _a;
+    try {
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.id)) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+        const review = await models_1.Review.findByPk(req.params.id);
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+        if (review.userId !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+        await review.destroy();
+        res.status(204).send();
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to delete review' });
+    }
+});
 exports.default = router;
