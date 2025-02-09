@@ -20,16 +20,16 @@
         </div>
 
         <select [(ngModel)]="statusFilter"
-                (ngModelChange)="onFilterChange()"
+                (ngModelChange)="onStatusChange($event)"
                 class="form-select">
-            <option value="">All Statuses</option>
+            <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
         </select>
 
         <select [(ngModel)]="sortBy"
-                (ngModelChange)="onFilterChange()"
+                (ngModelChange)="loadReviews()"
                 class="form-select">
             <option value="createdAt:DESC">Most Recent</option>
             <option value="rating:DESC">Highest Rating</option>

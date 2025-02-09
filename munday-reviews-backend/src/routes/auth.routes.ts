@@ -7,6 +7,15 @@ import { auth } from '../middleware/auth';
 
 const router = Router();
 
+const formatUserResponse = (user: any) => ({
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    fullName: `${user.firstName} ${user.lastName}`,
+    createdAt: user.createdAt
+});
+
 // Login
 router.post('/login', [
     body('email').isEmail().withMessage('Please provide a valid email'),
@@ -16,23 +25,27 @@ router.post('/login', [
         const { email, password } = req.body;
         
         const user = await User.findOne({ where: { email } });
-        if (!user) {
+        if (!user || !user.password) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const isValidPassword = await bcrypt.compare(password, user.password || '');
+        const isValidPassword = await bcrypt.compare(password, user.password);
         if (!isValidPassword) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         const token = jwt.sign(
-            { id: user.id, email: user.email },
+            { id: user.id, email: user.email, role: user.role },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '24h' }
         );
 
-        res.json({ token, user: { id: user.id, email: user.email, name: user.fullName } });
+        res.json({ 
+            token, 
+            user: formatUserResponse(user)
+        });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ message: 'Login failed' });
     }
 });
@@ -57,10 +70,13 @@ router.post('/register', [
             return res.status(400).json({ message: 'Email already registered' });
         }
 
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         // Create user
         const user = await User.create({
             email,
-            password,
+            password: hashedPassword,
             firstName,
             lastName,
             role: 'user',
@@ -68,13 +84,17 @@ router.post('/register', [
         });
 
         const token = jwt.sign(
-            { id: user.id, email: user.email },
+            { id: user.id, email: user.email, role: user.role },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '24h' }
         );
 
-        res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.fullName } });
+        res.status(201).json({ 
+            token, 
+            user: formatUserResponse(user)
+        });
     } catch (error) {
+        console.error('Registration error:', error);
         res.status(500).json({ message: 'Registration failed' });
     }
 });
@@ -89,9 +109,31 @@ router.get('/me', async (req: Request, res: Response) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json(user);
+        res.json(formatUserResponse(user));
     } catch (error) {
+        console.error('Get user error:', error);
         res.status(500).json({ message: 'Failed to fetch user data' });
+    }
+});
+
+// Forgot password
+router.post('/forgot-password', [
+    body('email').isEmail().withMessage('Please provide a valid email')
+], async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ where: { email } });
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // TODO: Implement password reset token generation and email sending
+        // For now, just return success to not leak user information
+        res.json({ message: 'If an account exists with this email, you will receive password reset instructions.' });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ message: 'Failed to process password reset request' });
     }
 });
 

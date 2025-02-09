@@ -1,4 +1,4 @@
-import { Sequelize } from 'sequelize-typescript';
+import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -15,14 +15,12 @@ if (fs.existsSync(dbPath)) {
 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: dbPath,
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    storage: './database.sqlite',
+    logging: false, // Set to console.log for debugging
     define: {
         timestamps: true,
-        paranoid: true
-    },
-    dialectOptions: {
-        foreign_keys: true
+        paranoid: true, // This enables soft deletes
+        underscored: true,
     }
 });
 

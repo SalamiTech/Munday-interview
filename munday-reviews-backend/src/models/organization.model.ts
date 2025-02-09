@@ -19,9 +19,10 @@ export interface OrganizationAttributes {
     verifiedBy?: number;
     createdAt?: Date;
     updatedAt?: Date;
+    deletedAt?: Date | null;
 }
 
-export interface OrganizationCreationAttributes extends Omit<OrganizationAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+export interface OrganizationCreationAttributes extends Omit<OrganizationAttributes, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'> {}
 
 export class Organization extends Model<OrganizationAttributes, OrganizationCreationAttributes> {
     declare id: number;
@@ -40,6 +41,7 @@ export class Organization extends Model<OrganizationAttributes, OrganizationCrea
     declare verifiedBy?: number;
     declare createdAt: Date;
     declare updatedAt: Date;
+    declare deletedAt: Date | null;
 
     static associate(models: { User: typeof User; Review: typeof Review }) {
         Organization.hasMany(models.Review, {
@@ -121,10 +123,16 @@ export class Organization extends Model<OrganizationAttributes, OrganizationCrea
                     key: 'id',
                 },
             },
+            deletedAt: {
+                type: DataTypes.DATE,
+                allowNull: true,
+            },
         }, {
             sequelize,
             tableName: 'organizations',
             timestamps: true,
+            paranoid: true,
+            underscored: true,
         });
     }
 }

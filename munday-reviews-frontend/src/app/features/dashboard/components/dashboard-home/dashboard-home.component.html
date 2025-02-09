@@ -27,7 +27,7 @@
     <div *ngIf="error" class="error-state">
         <i class="material-icons error-icon">error_outline</i>
         <p class="error-message">{{ error }}</p>
-        <button class="btn-primary retry-button" (click)="loadDashboardData()">
+        <button class="btn-primary retry-button" (click)="loadReviews()">
             <div class="button-content">
                 <i class="material-icons">refresh</i>
                 <span>Try Again</span>
@@ -70,114 +70,142 @@
             </div>
         </div>
 
-        <!-- Main Grid -->
-        <div class="dashboard-grid">
-            <!-- Recent Reviews -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <h2>
-                        <i class="material-icons">history</i>
-                        Recent Reviews
-                    </h2>
-                    <a routerLink="/reviews" class="view-all">
-                        View All
-                        <i class="material-icons">arrow_forward</i>
-                    </a>
-                </div>
-                <div class="card-content">
-                    <div *ngIf="recentReviews.length === 0" class="empty-state">
-                        <i class="material-icons">rate_review</i>
-                        <h3>No Reviews Yet</h3>
-                        <p>Be the first to share your experience and help others make informed decisions.</p>
-                        <button routerLink="/reviews/create" class="btn-primary">
-                            <i class="material-icons">add_circle</i>
-                            <span>Write First Review</span>
-                        </button>
+        <!-- Rating Distribution Chart -->
+        <div class="chart-section">
+            <app-rating-chart [ratingDistribution]="reviewStats.ratingDistribution"></app-rating-chart>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <form [formGroup]="filterForm" class="filters-form">
+                <div class="filter-group">
+                    <label>Date Range</label>
+                    <div class="date-inputs">
+                        <input type="date" formControlName="startDate" placeholder="Start Date">
+                        <input type="date" formControlName="endDate" placeholder="End Date">
                     </div>
-                    <div *ngFor="let review of recentReviews" class="review-item" [routerLink]="['/reviews', review.id]">
-                        <div class="review-header">
-                            <h3>{{ review.title }}</h3>
-                            <div class="review-rating">
-                                <div class="stars">
-                                    <i class="material-icons" *ngFor="let star of getStarArray(review.rating)">
-                                        {{ star === 'full' ? 'star' : 'star_border' }}
-                                    </i>
-                                </div>
-                                <span class="rating-value">{{ review.rating }}.0</span>
+                </div>
+
+                <div class="filter-group">
+                    <label>Rating Range</label>
+                    <div class="rating-inputs">
+                        <select formControlName="minRating">
+                            <option value="">Min Rating</option>
+                            <option *ngFor="let i of [1,2,3,4,5]" [value]="i">{{ i }} ★</option>
+                        </select>
+                        <select formControlName="maxRating">
+                            <option value="">Max Rating</option>
+                            <option *ngFor="let i of [1,2,3,4,5]" [value]="i">{{ i }} ★</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input type="text" formControlName="keyword" placeholder="Search reviews...">
+                </div>
+
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select formControlName="status">
+                        <option value="approved">Approved</option>
+                        <option value="pending">Pending</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+
+                <button type="button" class="btn-outline" (click)="resetFilters()">
+                    <i class="material-icons">refresh</i>
+                    Reset Filters
+                </button>
+            </form>
+        </div>
+
+        <!-- Reviews List -->
+        <div class="reviews-section">
+            <h2>Recent Reviews</h2>
+            <div class="reviews-list">
+                <div *ngFor="let review of recentReviews" class="review-card">
+                    <div class="review-header">
+                        <div class="review-meta">
+                            <span class="review-author">{{ review.isAnonymous ? 'Anonymous' : review.user?.firstName }}</span>
+                            <span class="review-date">{{ review.createdAt | date }}</span>
+                        </div>
+                        <div class="review-rating">
+                            <span class="rating-value">{{ review.rating }}/5</span>
+                            <div class="rating-stars">
+                                <i *ngFor="let star of [1,2,3,4,5]" 
+                                   class="material-icons"
+                                   [class.filled]="star <= review.rating">
+                                    star
+                                </i>
                             </div>
                         </div>
-                        <p class="review-org">
-                            <i class="material-icons">business</i>
-                            {{ review.organization?.name }}
-                        </p>
-                        <p class="review-preview">{{ truncateText(review.content, 150) }}</p>
-                        <div class="review-meta">
-                            <span class="review-date">
-                                <i class="material-icons">schedule</i>
-                                {{ review.createdAt | date:'mediumDate' }}
-                            </span>
-                            <span class="review-author">
-                                <i class="material-icons">person</i>
-                                {{ review.user?.fullName || 'Anonymous' }}
-                            </span>
+                    </div>
+
+                    <h3 class="review-title">{{ review.title }}</h3>
+                    <p class="review-content">{{ review.content }}</p>
+
+                    <div class="review-details">
+                        <div class="pros-cons" *ngIf="review.pros?.length || review.cons?.length">
+                            <div class="pros" *ngIf="review.pros?.length">
+                                <h4>Pros</h4>
+                                <ul>
+                                    <li *ngFor="let pro of review.pros">{{ pro }}</li>
+                                </ul>
+                            </div>
+                            <div class="cons" *ngIf="review.cons?.length">
+                                <h4>Cons</h4>
+                                <ul>
+                                    <li *ngFor="let con of review.cons">{{ con }}</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="review-actions">
+                            <button class="btn-text" (click)="markHelpful(review.id)">
+                                <i class="material-icons">thumb_up</i>
+                                Helpful ({{ review.helpfulCount }})
+                            </button>
+                            <button class="btn-text" (click)="reportReview(review.id)">
+                                <i class="material-icons">flag</i>
+                                Report
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Top Organizations -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <h2>
-                        <i class="material-icons">business</i>
-                        Top Organizations
-                    </h2>
-                    <a routerLink="/organizations" class="view-all">
-                        View All
-                        <i class="material-icons">arrow_forward</i>
-                    </a>
-                </div>
-                <div class="card-content">
-                    <div *ngIf="topOrganizations.length === 0" class="empty-state">
-                        <i class="material-icons">business</i>
-                        <h3>No Organizations Yet</h3>
-                        <p>Add your company or explore existing organizations to start reviewing.</p>
-                        <button routerLink="/organizations/create" class="btn-primary">
-                            <i class="material-icons">add_circle</i>
-                            <span>Add Organization</span>
-                        </button>
+            <!-- Load More -->
+            <div *ngIf="hasMore" class="load-more">
+                <button class="btn-outline" (click)="loadMore()">
+                    <i class="material-icons">expand_more</i>
+                    Load More Reviews
+                </button>
+            </div>
+        </div>
+
+        <!-- Top Organizations -->
+        <div class="organizations-section">
+            <h2>Top Rated Organizations</h2>
+            <div class="organizations-list">
+                <div *ngFor="let org of topOrganizations" class="org-card" [routerLink]="['/organizations', org.id]">
+                    <div class="org-avatar" *ngIf="!org.logo">
+                        {{ getOrgInitials(org.name) }}
                     </div>
-                    <div *ngFor="let org of topOrganizations" class="org-item" [routerLink]="['/organizations', org.id]">
-                        <div class="org-logo" [class.placeholder-logo]="!org.logo">
-                            <img *ngIf="org.logo" [src]="org.logo" [alt]="org.name">
-                            <span *ngIf="!org.logo">{{ getOrgInitials(org.name) }}</span>
+                    <img *ngIf="org.logo" [src]="org.logo" [alt]="org.name" class="org-logo">
+                    <div class="org-info">
+                        <h3>{{ org.name }}</h3>
+                        <div class="org-meta">
+                            <span class="org-industry">{{ org.industry }}</span>
+                            <span class="org-location">{{ org.location }}</span>
                         </div>
-                        <div class="org-info">
-                            <h3>{{ org.name }}</h3>
-                            <div class="org-meta">
-                                <span class="org-industry">
-                                    <i class="material-icons">category</i>
-                                    {{ org.industry }}
-                                </span>
-                                <span class="org-location" *ngIf="org.location">
-                                    <i class="material-icons">location_on</i>
-                                    {{ org.location }}
-                                </span>
-                            </div>
-                            <div class="org-stats">
-                                <div class="org-rating">
-                                    <div class="stars">
-                                        <i class="material-icons" *ngFor="let star of getStarArray(org.averageRating)">
-                                            {{ star === 'full' ? 'star' : 'star_border' }}
-                                        </i>
-                                    </div>
-                                    <span class="rating-value">{{ org.averageRating.toFixed(1) || 'No ratings' }}</span>
-                                </div>
-                                <span class="review-count">
-                                    <i class="material-icons">rate_review</i>
-                                    {{ org.reviewCount }} {{ org.reviewCount === 1 ? 'review' : 'reviews' }}
-                                </span>
-                            </div>
+                        <div class="org-stats">
+                            <span class="org-rating">
+                                {{ org.averageRating.toFixed(1) }}
+                                <i class="material-icons">star</i>
+                            </span>
+                            <span class="review-count">{{ org.reviewCount }} reviews</span>
                         </div>
                     </div>
                 </div>

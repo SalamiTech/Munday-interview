@@ -29,23 +29,22 @@ export interface ReviewStats {
     ratingDistribution: { [key: number]: number };
 }
 
-export class Review extends Model<ReviewAttributes, ReviewCreationAttributes> {
-    declare id: number;
-    declare title: string;
-    declare content: string;
-    declare rating: number;
-    declare pros: string[];
-    declare cons: string[];
-    declare isAnonymous: boolean;
-    declare status: 'pending' | 'approved' | 'rejected';
-    declare helpfulCount: number;
-    declare reportCount: number;
-    declare userId: number;
-    declare organizationId: number;
-    declare createdAt: Date;
-    declare updatedAt: Date;
-    declare user?: User;
-    declare organization?: Organization;
+export class Review extends Model {
+    public id!: number;
+    public title!: string;
+    public content!: string;
+    public rating!: number;
+    public pros!: string[];
+    public cons!: string[];
+    public isAnonymous!: boolean;
+    public status!: 'pending' | 'approved' | 'rejected';
+    public helpfulCount!: number;
+    public reportCount!: number;
+    public userId!: number;
+    public organizationId!: number;
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+    public readonly deletedAt!: Date | null;
 
     static associate(models: { User: typeof User; Organization: typeof Organization }) {
         Review.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
@@ -86,88 +85,74 @@ export class Review extends Model<ReviewAttributes, ReviewCreationAttributes> {
             id: {
                 type: DataTypes.INTEGER,
                 autoIncrement: true,
-                primaryKey: true,
+                primaryKey: true
             },
             title: {
                 type: DataTypes.STRING,
-                allowNull: false,
+                allowNull: false
             },
             content: {
                 type: DataTypes.TEXT,
-                allowNull: false,
+                allowNull: false
             },
             rating: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
                 validate: {
                     min: 1,
-                    max: 5,
-                },
+                    max: 5
+                }
             },
             pros: {
                 type: DataTypes.JSON,
-                allowNull: true,
-                defaultValue: [],
-                get(): string[] {
-                    const rawValue = this.getDataValue('pros');
-                    return Array.isArray(rawValue) ? rawValue : [];
-                },
-                set(value: string[]) {
-                    this.setDataValue('pros', Array.isArray(value) ? value : []);
-                }
+                defaultValue: []
             },
             cons: {
                 type: DataTypes.JSON,
-                allowNull: true,
-                defaultValue: [],
-                get(): string[] {
-                    const rawValue = this.getDataValue('cons');
-                    return Array.isArray(rawValue) ? rawValue : [];
-                },
-                set(value: string[]) {
-                    this.setDataValue('cons', Array.isArray(value) ? value : []);
-                }
+                defaultValue: []
             },
             isAnonymous: {
                 type: DataTypes.BOOLEAN,
-                allowNull: false,
-                defaultValue: false,
+                defaultValue: false
             },
             status: {
-                type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+                type: DataTypes.STRING,
                 allowNull: false,
                 defaultValue: 'pending',
+                validate: {
+                    isIn: [['pending', 'approved', 'rejected']]
+                }
             },
             helpfulCount: {
                 type: DataTypes.INTEGER,
-                allowNull: false,
-                defaultValue: 0,
+                defaultValue: 0
             },
             reportCount: {
                 type: DataTypes.INTEGER,
-                allowNull: false,
-                defaultValue: 0,
+                defaultValue: 0
             },
             userId: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
                 references: {
                     model: 'users',
-                    key: 'id',
-                },
+                    key: 'id'
+                }
             },
             organizationId: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
                 references: {
                     model: 'organizations',
-                    key: 'id',
-                },
-            },
+                    key: 'id'
+                }
+            }
         }, {
             sequelize,
+            modelName: 'Review',
             tableName: 'reviews',
-            timestamps: true,
+            paranoid: true,
+            underscored: true
         });
     }
 }

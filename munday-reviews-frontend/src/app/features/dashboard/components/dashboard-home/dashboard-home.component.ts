@@ -1,28 +1,30 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ReviewService } from '../../../../core/services/review.service';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { ReviewService, ReviewFilters, ReviewStats } from '../../../../core/services/review.service';
 import { OrganizationService } from '../../../../core/services/organization.service';
 import { Review } from '../../../../core/models/review.model';
 import { Organization } from '../../../../core/models/organization.model';
-import { Subject, takeUntil, catchError } from 'rxjs';
-import { forkJoin } from 'rxjs';
+import { RatingChartComponent } from '../rating-chart/rating-chart.component';
 
 @Component({
     selector: 'app-dashboard-home',
     standalone: true,
-    imports: [CommonModule, RouterModule],
+    imports: [
+        CommonModule,
+        RouterModule,
+        ReactiveFormsModule,
+        RatingChartComponent
+    ],
     templateUrl: './dashboard-home.component.html',
     styleUrls: ['./dashboard-home.component.scss']
 })
 export class DashboardHomeComponent implements OnInit, OnDestroy {
     recentReviews: Review[] = [];
     topOrganizations: Organization[] = [];
-    reviewStats: {
-        totalReviews: number;
-        averageRating: number;
-        ratingDistribution: { [key: number]: number };
-    } = {
+    reviewStats: ReviewStats = {
         totalReviews: 0,
         averageRating: 0,
         ratingDistribution: {
@@ -36,15 +38,34 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     isLoading = true;
     error = '';
 
+    filterForm: FormGroup;
+    currentPage = 1;
+    pageSize = 10;
+    totalPages = 1;
+    hasMore = false;
+
     private destroy$ = new Subject<void>();
 
     constructor(
         private reviewService: ReviewService,
-        private organizationService: OrganizationService
-    ) {}
+        private organizationService: OrganizationService,
+        private fb: FormBuilder
+    ) {
+        this.filterForm = this.fb.group({
+            startDate: [''],
+            endDate: [''],
+            minRating: [''],
+            maxRating: [''],
+            keyword: [''],
+            status: ['approved']
+        });
+    }
 
     ngOnInit(): void {
-        this.loadDashboardData();
+        this.setupFilterSubscription();
+        this.setupReviewStatsSubscription();
+        this.loadTopOrganizations();
+        this.loadReviews();
     }
 
     ngOnDestroy(): void {
@@ -52,39 +73,70 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    loadDashboardData(): void {
+    private setupFilterSubscription(): void {
+        this.filterForm.valueChanges.pipe(
+            takeUntil(this.destroy$),
+            debounceTime(300),
+            distinctUntilChanged()
+        ).subscribe(() => {
+            this.currentPage = 1;
+            this.loadReviews();
+        });
+    }
+
+    private setupReviewStatsSubscription(): void {
+        this.reviewService.reviewStats$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(stats => {
+                this.reviewStats = stats;
+            });
+    }
+
+    loadReviews(page: number = this.currentPage): void {
         this.isLoading = true;
         this.error = '';
 
-        forkJoin({
-            reviews: this.reviewService.getReviews({ 
-                page: 1, 
-                limit: 5,
-                sort: 'createdAt:desc',
-                status: 'approved'
-            }),
-            organizations: this.organizationService.getTopOrganizations(5),
-            stats: this.reviewService.getReviewStats()
-        }).pipe(
-            takeUntil(this.destroy$),
-            catchError(error => {
-                console.error('Error loading dashboard data:', error);
-                this.error = 'Failed to load dashboard data. Please try again.';
-                this.isLoading = false;
-                throw error;
-            })
-        ).subscribe({
-            next: (data: any) => {  // Type as any temporarily to handle response structure
-                this.recentReviews = data.reviews.items;
-                this.topOrganizations = Array.isArray(data.organizations) ? data.organizations : 
-                    (data.organizations?.organizations || []);
-                this.reviewStats = data.stats?.stats || data.stats || this.reviewStats;
-                this.isLoading = false;
-            },
-            error: () => {
-                // Error already handled in catchError
-            }
-        });
+        const filters: ReviewFilters = {
+            ...this.filterForm.value,
+            page,
+            limit: this.pageSize
+        };
+
+        this.reviewService.getReviews(filters)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (response) => {
+                    this.recentReviews = response.items;
+                    this.totalPages = response.totalPages;
+                    this.hasMore = response.hasMore;
+                    this.currentPage = response.page;
+                    this.isLoading = false;
+                },
+                error: (error) => {
+                    console.error('Error loading reviews:', error);
+                    this.error = 'Failed to load reviews. Please try again.';
+                    this.isLoading = false;
+                }
+            });
+    }
+
+    private loadTopOrganizations(): void {
+        this.organizationService.getTopOrganizations(5)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (organizations) => {
+                    this.topOrganizations = organizations;
+                },
+                error: (error) => {
+                    console.error('Error loading top organizations:', error);
+                }
+            });
+    }
+
+    loadMore(): void {
+        if (this.hasMore) {
+            this.loadReviews(this.currentPage + 1);
+        }
     }
 
     getRatingPercentage(rating: number): number {
@@ -115,13 +167,6 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
         return 'No ratings yet';
     }
 
-    getStarArray(rating: number = 0): ('full' | 'empty')[] {
-        const roundedRating = Math.round(rating);
-        return Array(5).fill('empty').map((_, index) => 
-            index < roundedRating ? 'full' : 'empty'
-        );
-    }
-
     getOrgInitials(name: string): string {
         return name
             .split(' ')
@@ -131,8 +176,41 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
             .toUpperCase();
     }
 
-    truncateText(text: string, maxLength: number = 150): string {
-        if (!text) return '';
-        return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+    resetFilters(): void {
+        this.filterForm.reset({
+            status: 'approved'
+        });
+    }
+
+    markHelpful(reviewId: string): void {
+        this.reviewService.markHelpful(reviewId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (updatedReview) => {
+                    this.recentReviews = this.recentReviews.map(review =>
+                        review.id === updatedReview.id ? updatedReview : review
+                    );
+                },
+                error: (error) => {
+                    console.error('Error marking review as helpful:', error);
+                }
+            });
+    }
+
+    reportReview(reviewId: string): void {
+        // In a real application, you might want to show a dialog to get the reason
+        const reason = 'inappropriate content';
+        this.reviewService.reportReview(reviewId, reason)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (updatedReview) => {
+                    this.recentReviews = this.recentReviews.map(review =>
+                        review.id === updatedReview.id ? updatedReview : review
+                    );
+                },
+                error: (error) => {
+                    console.error('Error reporting review:', error);
+                }
+            });
     }
 } 
