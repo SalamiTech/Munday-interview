@@ -157,7 +157,18 @@ router.get('/stats', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
     try {
         const review = await Review.findByPk(req.params.id, {
-            include: ['user', 'organization']
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'firstName', 'lastName', 'avatar']
+                },
+                {
+                    model: Organization,
+                    as: 'organization',
+                    attributes: ['id', 'name', 'industry', 'logo']
+                }
+            ]
         });
         if (!review) {
             return res.status(404).json({ message: 'Review not found' });
@@ -183,7 +194,18 @@ router.post('/', auth, validateReview, async (req: Request, res: Response) => {
         });
 
         const createdReview = await Review.findByPk(review.id, {
-            include: ['user', 'organization']
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'firstName', 'lastName', 'avatar']
+                },
+                {
+                    model: Organization,
+                    as: 'organization',
+                    attributes: ['id', 'name', 'industry', 'logo']
+                }
+            ]
         });
 
         res.status(201).json(createdReview);
@@ -211,7 +233,18 @@ router.patch('/:id', auth, validateReview, async (req: Request, res: Response) =
         await review.update(req.body);
         
         const updatedReview = await Review.findByPk(review.id, {
-            include: ['user', 'organization']
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'firstName', 'lastName', 'avatar']
+                },
+                {
+                    model: Organization,
+                    as: 'organization',
+                    attributes: ['id', 'name', 'industry', 'logo']
+                }
+            ]
         });
 
         res.json(updatedReview);

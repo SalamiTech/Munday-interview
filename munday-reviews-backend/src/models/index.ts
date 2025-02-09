@@ -18,11 +18,11 @@ export async function initializeModels() {
         Review.initialize(sequelize);
 
         // Set up associations
-        User.hasMany(Review);
-        Review.belongsTo(User);
+        User.hasMany(Review, { as: 'reviews' });
+        Review.belongsTo(User, { as: 'user' });
 
-        Organization.hasMany(Review);
-        Review.belongsTo(Organization);
+        Organization.hasMany(Review, { as: 'reviews' });
+        Review.belongsTo(Organization, { as: 'organization' });
 
         // Sync database - this will create tables
         await sequelize.sync({ force: true });

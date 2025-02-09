@@ -1,6 +1,6 @@
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import { Review } from '../models';
+import { Review, User, Organization } from '../models';
 import { Op } from 'sequelize';
 
 interface ReviewStats {
@@ -49,7 +49,18 @@ async function getRecentReviews(organizationId?: string, limit = 5) {
             ...where,
             status: 'approved'
         },
-        include: ['user', 'organization'],
+        include: [
+            {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'firstName', 'lastName', 'avatar']
+            },
+            {
+                model: Organization,
+                as: 'organization',
+                attributes: ['id', 'name', 'industry', 'logo']
+            }
+        ],
         order: [['createdAt', 'DESC']],
         limit
     });
