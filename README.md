@@ -1,43 +1,104 @@
 # Munday Reviews
 
-A modern, full-stack application for company reviews with real-time updates and interactive features.
+A modern, full-stack review platform with strict validation rules, real-time updates, and comprehensive data visualization. Similar to Trustpilot but with enhanced data integrity and visualization features.
 
-## 🚀 Features
+## 🎯 Core Features
 
-- User authentication and authorization
-- Company review creation and management
-- Real-time updates using WebSocket
-- Interactive charts and analytics
-- Responsive design with modern UI
-- Rate limiting and security features
-- Organization management
+### 1. Review Dashboard & Data Visualization
+- **Overall Ratings Dashboard**
+  - Aggregated average ratings per organization
+  - Interactive time-series charts for review trends
+  - Rating distribution visualizations (1-5 stars)
+- **Real-time Updates**
+  - WebSocket integration for live review updates
+  - Instant dashboard metric updates
+  - Live notification system
 
-## 🛠 Tech Stack
+### 2. Strict Data Validation & Filtering
+- **Review Validation Rules**
+  - Required rating (1-5 stars)
+  - Minimum character length for review text
+  - User and organization validation
+  - Client and server-side validation enforcement
+- **Advanced Filtering System**
+  - Date range filtering
+  - Rating-based filtering
+  - Review status filtering
+  - Keyword search functionality
+
+### 3. CRUD Operations
+- Complete review management system
+- Strict validation enforcement on all operations
+- Audit trail for review modifications
+- Role-based access control
+
+### 4. Data Model
+```typescript
+User {
+  id: string
+  name: string
+  email: string
+  // Additional user fields
+}
+
+Organization {
+  id: string
+  name: string
+  description: string
+  // Additional organization fields
+}
+
+Review {
+  id: string
+  userId: string
+  organizationId: string
+  rating: number (1-5)
+  reviewText: string
+  timestamp: Date
+  status: string
+  // Additional review metadata
+}
+```
+
+## 🛠 Technical Stack
 
 ### Frontend
-- Angular 17
-- TailwindCSS for styling
-- Chart.js for data visualization
-- Socket.io client for real-time features
-- TypeScript
+- **Framework**: Angular 17
+- **UI Components**:
+  - TailwindCSS for modern, responsive design
+  - Chart.js for interactive visualizations
+  - Socket.io-client for real-time features
+- **State Management**: NgRx (optional)
+- **Testing**: Jasmine & Karma
 
 ### Backend
-- Node.js with Express
-- TypeScript
-- Sequelize ORM with SQLite/MySQL support
-- Socket.io for WebSocket functionality
-- JWT for authentication
-- Express-validator for request validation
-- Helmet for security
-- Morgan for logging
+- **Runtime**: Node.js with Express
+- **Language**: TypeScript
+- **Database**: MySQL with Sequelize ORM
+- **Real-time**: Socket.io
+- **Security**:
+  - JWT authentication
+  - Express-validator
+  - Helmet security headers
+  - Rate limiting
+- **Testing**: Jest
+
+### DevOps
+- **Containerization**: Docker & Docker Compose
+- **CI/CD**: GitHub Actions
+- **Database Migrations**: Sequelize CLI
+- **API Documentation**: Swagger/OpenAPI
 
 ## 📋 Prerequisites
 
+- Docker and Docker Compose
 - Node.js (v14 or higher)
+- MySQL (if running without Docker)
 - npm or yarn
-- MySQL (optional, SQLite included by default)
 
-## 🔧 Installation
+## 🚀 Quick Start
+
+### Using Docker (Recommended)
 
 1. Clone the repository:
 ```bash
@@ -45,91 +106,101 @@ git clone https://github.com/yourusername/munday-reviews.git
 cd munday-reviews
 ```
 
-2. Install Backend Dependencies:
+2. Start the application stack:
+```bash
+docker-compose up
+```
+
+The application will be available at:
+- Frontend: http://localhost:4200
+- Backend API: http://localhost:3000
+- API Documentation: http://localhost:3000/api-docs
+
+### Manual Setup
+
+1. Configure Backend:
 ```bash
 cd munday-reviews-backend
+cp .env.example .env
 npm install
 ```
 
-3. Configure Environment Variables:
-Create a `.env` file in the backend directory with the following variables:
-```env
-PORT=3000
-JWT_SECRET=your_jwt_secret
-DATABASE_URL=your_database_url
-NODE_ENV=development
-```
-
-4. Install Frontend Dependencies:
+2. Configure Frontend:
 ```bash
 cd ../munday-reviews-frontend
 npm install
 ```
 
-## 🚀 Running the Application
-
-### Backend
+3. Start Development Servers:
 ```bash
+# Terminal 1 - Backend
 cd munday-reviews-backend
-# Development mode with hot reload
 npm run dev
-# OR Production build
-npm run build
-npm start
-```
 
-### Frontend
-```bash
+# Terminal 2 - Frontend
 cd munday-reviews-frontend
-# Development server
 npm start
-# OR Production build
-npm run build
 ```
 
-The frontend will be available at `http://localhost:4200`
-The backend API will be available at `http://localhost:3000`
+## 🔒 Data Validation Rules
 
-## 🔒 Security Features
+### Review Submission
+- Rating: Required, integer between 1-5
+- Review Text: Required, minimum 50 characters
+- User: Must be authenticated
+- Organization: Must exist in database
 
-- JWT-based authentication
-- Rate limiting
-- CORS protection
-- Helmet security headers
-- Password hashing with bcrypt
-- Input validation and sanitization
+### Input Sanitization
+- HTML/Script tag removal
+- Special character escaping
+- Whitespace normalization
 
-## 📦 Project Structure
+## 🔍 Filtering Capabilities
 
+- **Date Range**: Filter reviews within specific timeframes
+- **Rating**: Filter by star rating (1-5)
+- **Status**: Filter by review status (pending/approved/rejected)
+- **Search**: Full-text search across review content
+- **Organization**: Filter by organization name/ID
+- **Sorting**: Multiple sort options (date, rating, etc.)
+
+## 📊 Data Visualization
+
+- **Rating Distribution**: Bar/Pie charts showing rating breakdowns
+- **Time Series**: Line charts for review trends
+- **Organization Comparisons**: Comparative analytics
+- **User Activity**: Review submission patterns
+- **Interactive Filters**: Dynamic chart updates based on filters
+
+## 🧪 Testing
+
+```bash
+# Run backend tests
+cd munday-reviews-backend
+npm test
+
+# Run frontend tests
+cd munday-reviews-frontend
+npm test
 ```
-munday-reviews/
-├── munday-reviews-frontend/    # Angular frontend application
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── features/      # Feature modules
-│   │   │   │   └── core/          # Core services
-│   │   └── assets/
-│   └── ...
-│
-└── munday-reviews-backend/     # Express backend application
-    ├── src/
-    │   ├── controllers/       # Request handlers
-    │   ├── models/           # Database models
-    │   ├── routes/           # API routes
-    │   ├── config/           # Configuration files
-    │   └── utils/            # Utility functions
-    └── ...
-```
+
+## 📝 API Documentation
+
+API documentation is available at `http://localhost:3000/api-docs` when running the application.
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
-## 📝 License
+## 🔄 CI/CD Pipeline
+
+The project includes GitHub Actions workflows for:
+- Automated testing
+- Code quality checks
+- Docker image builds
+- Deployment automation
+
+## 📜 License
 
 This project is licensed under the ISC License.
 
@@ -139,6 +210,6 @@ This project is licensed under the ISC License.
 
 ## 🙏 Acknowledgments
 
-- Angular team for the amazing framework
+- Angular team
 - Express.js community
-- All contributors who participate in this project 
+- All contributors 
