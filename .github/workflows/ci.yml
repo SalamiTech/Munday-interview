@@ -25,6 +25,8 @@ jobs:
 
     - name: Test Backend
       working-directory: ./munday-reviews-backend
+      env:
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: |
         npm ci
         npm run lint
