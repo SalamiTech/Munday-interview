@@ -123,7 +123,7 @@ While the UI is functional and responsive, priority was given to implementing co
 
 ## Tech Stack
 
-- **Frontend**: Angular 17, Material UI, TailwindCSS
+- **Frontend**: Angular 19, Material UI, TailwindCSS
 - **Backend**: Node.js, Express, SQLite
 - **Real-time**: Socket.IO
 - **Testing**: Jest, Jasmine
