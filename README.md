@@ -1,21 +1,59 @@
-# Munday Reviews
+# Munday Reviews - Full Stack Developer Challenge
 
-A modern review platform built with Angular and Node.js, featuring real-time updates using WebSocket.
+## Project Overview
+A review platform built with Angular and Node.js, focusing on strict data validation and real-time updates.
 
-## Features
+## Key Features Implemented
 
-- 🔄 Real-time review updates
-- 👥 User authentication
-- 🏢 Organization management
-- ⭐ Review creation and management
-- 📊 Rating statistics and analytics
+### 1. Review Dashboard & Data Visualization
+- Real-time updates using WebSocket integration
+- Organization rating statistics and trends
+- Rating distribution visualization
+- Review timeline charts
 
-## Prerequisites
+### 2. Data Validation & Filtering
+- Strict review validation rules (client & server-side)
+- Review filtering by:
+  - Date range
+  - Rating
+  - Status
+  - Keywords
+- Input sanitization and validation
 
+### 3. CRUD Operations
+- Complete review management system
+- User authentication and authorization
+- Organization management
+- Real-time updates for all operations
+
+### 4. Technical Implementation
+
+#### Frontend (Angular 17)
+- Real-time WebSocket integration
+- Reactive forms with validation
+- Material UI components
+- TailwindCSS for styling
+- Chart.js for data visualization
+
+#### Backend (Node.js)
+- Express.js REST API
+- Socket.IO for real-time updates
+- SQLite database with Sequelize ORM
+- JWT authentication
+- Input validation middleware
+
+#### DevOps
+- Docker containerization
+- GitHub Actions CI/CD
+- Automated testing setup
+
+## Setup Instructions
+
+### Prerequisites
 - Docker Desktop
-- Node.js 20.x (for local development without Docker)
+- Node.js 20.x (for local development)
 
-## Quick Start with Docker
+### Quick Start with Docker
 
 1. Clone the repository:
 ```bash
@@ -23,46 +61,55 @@ git clone https://github.com/YourUsername/Munday-Interview.git
 cd Munday-Interview
 ```
 
-2. Start the application using Docker Compose:
+2. Start with Docker Compose:
 ```bash
-docker-compose up --build
+docker-compose up
 ```
 
 3. Access the application:
 - Frontend: http://localhost
 - API: http://localhost:3000
 
-## Local Development (Without Docker)
+### Default Admin Credentials
+- Email: admin@example.com
+- Password: Admin123!@#
 
-### Backend Setup
+## Implementation Details
 
-```bash
-cd munday-reviews-backend
-npm install
-npm run dev
-```
+### Data Validation
+- Server-side validation using express-validator
+- Client-side form validation using Angular Reactive Forms
+- Custom validation rules for reviews:
+  - Rating (1-5 stars)
+  - Minimum content length
+  - Required fields validation
 
-### Frontend Setup
+### Real-time Features
+- WebSocket integration for live updates
+- Real-time review notifications
+- Live rating updates
+- Instant data synchronization
 
-```bash
-cd munday-reviews-frontend
-npm install
-npm start
-```
+### Database Structure
+- Users (authentication, profiles)
+- Organizations (company details)
+- Reviews (ratings, content, metadata)
+- Relationships and foreign key constraints
 
 ## Testing
+- Backend unit tests with Jest
+- Frontend tests with Jasmine
+- GitHub Actions automated testing
 
-Run backend tests:
-```bash
-cd munday-reviews-backend
-npm test
-```
+## Note on UI/UX
+This implementation focused primarily on functionality and technical requirements, with emphasis on:
+- Robust data validation
+- Real-time updates
+- Secure authentication
+- Efficient data management
+- Scalable architecture
 
-Run frontend tests:
-```bash
-cd munday-reviews-frontend
-npm test
-```
+While the UI is functional and responsive, priority was given to implementing core features and ensuring system reliability.
 
 ## Project Structure
 
@@ -80,7 +127,6 @@ npm test
 - **Backend**: Node.js, Express, SQLite
 - **Real-time**: Socket.IO
 - **Testing**: Jest, Jasmine
-- **CI/CD**: GitHub Actions
 - **Containerization**: Docker
 
 ## License
