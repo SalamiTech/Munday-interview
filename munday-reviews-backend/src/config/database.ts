@@ -7,15 +7,15 @@ dotenv.config();
 
 const dbPath = path.join(__dirname, '..', '..', 'data', 'database.sqlite');
 
-// Delete existing database file if it exists
-if (fs.existsSync(dbPath)) {
-    fs.unlinkSync(dbPath);
-    console.log('Existing database deleted');
+// Ensure data directory exists
+const dataDir = path.dirname(dbPath);
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
 }
 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: './database.sqlite',
+    storage: dbPath,
     logging: false, // Set to console.log for debugging
     define: {
         timestamps: true,
@@ -34,7 +34,7 @@ export async function initDatabase(models: any[]) {
             }
         });
 
-        // Set up associations after all models are initialized
+        // Set up associations
         models.forEach(model => {
             if (typeof model.associate === 'function') {
                 model.associate(models.reduce((acc, m) => {
@@ -44,14 +44,8 @@ export async function initDatabase(models: any[]) {
             }
         });
 
-        // Disable foreign key checks
-        await sequelize.query('PRAGMA foreign_keys = OFF;');
-        
-        // Sync all models
-        await sequelize.sync({ force: true });
-        
-        // Re-enable foreign key checks
-        await sequelize.query('PRAGMA foreign_keys = ON;');
+        // Sync models without force
+        await sequelize.sync();
         
         console.log('Database initialized successfully');
     } catch (error) {

@@ -29,7 +29,7 @@ async function startServer() {
     try {
         // Initialize database
         await initializeModels();
-        await sequelize.sync({ force: true }); // This will recreate tables
+        await sequelize.sync(); // Remove force: true to preserve data
 
         // Initialize WebSocket
         const io = setupWebSocket(httpServer);

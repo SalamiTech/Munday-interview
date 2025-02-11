@@ -2,10 +2,14 @@ import { Sequelize } from 'sequelize';
 import { User } from './user.model';
 import { Organization } from './organization.model';
 import { Review } from './review.model';
+import bcrypt from 'bcryptjs';
+import path from 'path';
+
+const dbPath = path.join(__dirname, '..', '..', 'data', 'database.sqlite');
 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: './database.sqlite',
+    storage: dbPath,
     logging: false // Set to console.log for debugging
 });
 
@@ -24,13 +28,16 @@ export async function initializeModels() {
         Organization.hasMany(Review, { as: 'reviews' });
         Review.belongsTo(Organization, { as: 'organization' });
 
-        // Sync database - this will create tables
-        await sequelize.sync({ force: true });
+        // Sync database without force
+        await sequelize.sync();
         console.log('Database synchronized');
 
-        // Seed initial data
-        await seedInitialData();
-        console.log('Initial data seeded successfully');
+        // Only seed data if no organizations exist
+        const count = await Organization.count();
+        if (count === 0) {
+            await seedInitialData();
+            console.log('Initial data seeded successfully');
+        }
 
         console.log('Models initialized successfully');
     } catch (error) {
@@ -88,10 +95,11 @@ async function seedInitialData() {
             await Organization.create(org);
         }
 
-        // Create a default admin user
+        // Create a default admin user with properly hashed password
+        const hashedPassword = await bcrypt.hash('Admin123!@#', 10);
         await User.create({
             email: 'admin@example.com',
-            password: '$2a$10$rQnpkWDXCw.ggQwxQX6Qz.YlqYQCqX6r5MqX5Q8Q8Q8Q8Q8Q8Q',
+            password: hashedPassword,
             firstName: 'Admin',
             lastName: 'User',
             role: 'admin',

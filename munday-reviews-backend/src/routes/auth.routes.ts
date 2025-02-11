@@ -24,7 +24,7 @@ router.post('/login', [
     try {
         const { email, password } = req.body;
         
-        const user = await User.findOne({ where: { email } });
+        const user = await User.scope('withPassword').findOne({ where: { email } });
         if (!user || !user.password) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }

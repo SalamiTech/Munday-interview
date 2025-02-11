@@ -37,15 +37,12 @@
                     <i class="material-icons">lock</i>
                     <input
                         id="password"
-                        [type]="hidePassword ? 'password' : 'text'"
+                        type="password"
                         formControlName="password"
                         placeholder="Enter your password"
                         class="form-input"
                         [class.error]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
                     >
-                    <button type="button" class="toggle-password" (click)="hidePassword = !hidePassword">
-                        <i class="material-icons">{{ hidePassword ? 'visibility' : 'visibility_off' }}</i>
-                    </button>
                 </div>
                 <div class="error-message" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']">
                     Password is required

@@ -1,187 +1,150 @@
-<!-- Main Container -->
-<div class="min-h-screen bg-surface-secondary px-4 py-8 md:px-6 lg:px-8">
+<!-- Organization Details Container -->
+<div class="container mx-auto px-4 py-8">
     <!-- Loading State -->
-    <div *ngIf="isLoading" class="flex flex-col items-center justify-center space-y-4 py-12">
-        <div class="h-12 w-12 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div>
-        <p class="text-primary-600 font-medium">Loading organization details...</p>
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
     </div>
 
     <!-- Error State -->
-    <div *ngIf="error" class="mx-auto max-w-md rounded-lg bg-error-light p-6 text-center">
-        <p class="mb-4 text-error-dark">{{ error }}</p>
-        <button class="btn-primary" (click)="loadOrganizationData(organization?.id!)">
+    <div *ngIf="error" class="bg-error/10 text-error rounded-xl p-6 mb-8 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i class="material-icons">error_outline</i>
+            <span>{{ error }}</span>
+        </div>
+        <button class="btn-outline border-error text-error hover:bg-error hover:text-white" 
+                (click)="retryLoad()">
             Try Again
         </button>
     </div>
 
-    <!-- Organization Details -->
     <ng-container *ngIf="!isLoading && !error && organization">
-        <!-- Header Section -->
-        <div class="mb-8 rounded-xl bg-surface-DEFAULT p-6 shadow-sm">
-            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div class="space-y-4">
-                    <!-- Organization Logo & Name -->
-                    <div class="flex items-center gap-4">
-                        <div class="h-16 w-16 overflow-hidden rounded-lg bg-primary-50">
-                            <img *ngIf="organization.logo" [src]="organization.logo" [alt]="organization.name" 
-                                 class="h-full w-full object-cover">
-                            <div *ngIf="!organization.logo" class="flex h-full items-center justify-center bg-primary-100 text-2xl font-bold text-primary-600">
-                                {{ organization.name.charAt(0) }}
-                            </div>
-                        </div>
+        <!-- Organization Header -->
+        <div class="bg-surface rounded-xl p-8 shadow-md mb-8">
+            <div class="flex items-start gap-6">
+                <!-- Organization Logo/Avatar -->
+                <div *ngIf="organization.logo; else orgInitials" 
+                     class="w-24 h-24 rounded-xl overflow-hidden shadow-md">
+                    <img [src]="organization.logo" 
+                         [alt]="organization.name"
+                         class="w-full h-full object-cover">
+                </div>
+                <ng-template #orgInitials>
+                    <div class="w-24 h-24 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <span class="text-3xl font-bold text-primary">
+                            {{ getOrgInitials(organization.name) }}
+                        </span>
+                    </div>
+                </ng-template>
+
+                <!-- Organization Info -->
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
                         <div>
-                            <h1 class="text-2xl font-bold text-primary-900 md:text-3xl">{{ organization.name }}</h1>
-                            <div class="flex flex-wrap gap-3 text-sm text-primary-600">
+                            <h1 class="text-3xl font-bold text-text-primary mb-2">
+                                {{ organization.name }}
+                            </h1>
+                            <div class="flex items-center gap-4 text-text-secondary">
                                 <span class="flex items-center gap-1">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                    </svg>
+                                    <i class="material-icons text-sm">business</i>
                                     {{ organization.industry }}
                                 </span>
                                 <span class="flex items-center gap-1">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
+                                    <i class="material-icons text-sm">location_on</i>
                                     {{ organization.location }}
                                 </span>
                                 <span class="flex items-center gap-1">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                    </svg>
+                                    <i class="material-icons text-sm">people</i>
                                     {{ organization.employeeCount }} employees
                                 </span>
                             </div>
                         </div>
+                        <div class="flex gap-2">
+                            <a *ngIf="organization.website" 
+                               [href]="organization.website" 
+                               target="_blank"
+                               class="btn-outline flex items-center gap-1">
+                                <i class="material-icons">language</i>
+                                Website
+                            </a>
+                            <button *ngIf="canEdit" 
+                                    class="btn-outline flex items-center gap-1"
+                                    (click)="onEdit()">
+                                <i class="material-icons">edit</i>
+                                Edit
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Action Buttons -->
-                <div class="flex gap-3">
-                    <button class="btn-outline" (click)="onShare()">
-                        Share
-                    </button>
-                    <button class="btn-primary" (click)="onWriteReview()">
-                        Write Review
-                    </button>
+
+                    <p class="text-text-secondary mt-4">
+                        {{ organization.description }}
+                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Grid -->
-        <div class="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <!-- Overall Rating -->
-            <div class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
-                <div class="mb-2 text-sm font-medium text-primary-600">Overall Rating</div>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-bold text-primary-900">
-                        {{ organization.averageRating.toFixed(1) }}
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Rating Card -->
+            <div class="bg-surface rounded-xl p-6 shadow-md">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-text-secondary font-medium mb-1">Average Rating</h3>
+                        <div class="flex items-center gap-2">
+                            <span class="text-3xl font-bold text-text-primary">
+                                {{ organization.averageRating.toFixed(1) }}
+                            </span>
+                            div class="flex">
+                            <i *ngFor="let star of [1,2,3,4,5]" 
+                                class="material-icons"
+                                [ngClass]="{
+                                    'text-warning': organization.averageRating >= star,
+                                    'text-warning/30': organization.averageRating < star
+                                }">star</i>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="bg-warning/10 text-warning px-3 py-1 rounded-full text-sm font-medium">
+                        {{ organization.reviewCount }} reviews
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interview Success Card -->
+            <div class="bg-surface rounded-xl p-6 shadow-md">
+                <h3 class="text-text-secondary font-medium mb-1">Interview Success Rate</h3>
+                <div class="flex items-center gap-2">
+                    <span class="text-3xl font-bold text-text-primary">
+                        {{ (organization.interviewSuccessRate * 100).toFixed(0) }}%
                     </span>
-                    <div class="flex text-warning-DEFAULT">
-                        <span *ngFor="let star of [1,2,3,4,5]" 
-                              class="text-lg"
-                              [class.text-warning-light]="organization.averageRating < star">
-                            ★
-                        </span>
-                    </div>
+                    <div class="text-text-secondary text-sm">success rate</div>
                 </div>
             </div>
 
-            <!-- Review Count -->
-            <div class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
-                <div class="mb-2 text-sm font-medium text-primary-600">Total Reviews</div>
-                <div class="text-3xl font-bold text-primary-900">
-                    {{ organization.reviewCount }}
+            <!-- Salary Card -->
+            <div class="bg-surface rounded-xl p-6 shadow-md">
+                <h3 class="text-text-secondary font-medium mb-1">Average Salary</h3>
+                <div class="flex items-center gap-2">
+                    <span class="text-3xl font-bold text-text-primary">
+                        ${{ organization.averageSalary?.toLocaleString() || 'N/A' }}
+                    </span>
+                    <div class="text-text-secondary text-sm">per year</div>
                 </div>
             </div>
 
-            <!-- Average Salary -->
-            <div class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
-                <div class="mb-2 text-sm font-medium text-primary-600">Avg. Salary</div>
-                <div class="text-3xl font-bold text-primary-900">
-                    ${{ organization.averageSalary?.toLocaleString() || 'N/A' }}
-                </div>
-            </div>
-
-            <!-- Interview Success Rate -->
-            <div class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
-                <div class="mb-2 text-sm font-medium text-primary-600">Interview Success</div>
-                <div class="text-3xl font-bold text-primary-900">
-                    {{ (organization.interviewSuccessRate * 100).toFixed(0) }}%
-                </div>
-            </div>
-        </div>
-
-        <!-- Rating Distribution -->
-        <div class="mb-8">
-            <app-rating-chart
-                [ratingDistribution]="ratingDistribution"
-                [title]="'Rating Distribution'"
-            ></app-rating-chart>
-        </div>
-
-        <!-- Description -->
-        <div class="mb-8 rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
-            <h2 class="mb-4 text-xl font-semibold text-primary-900">About</h2>
-            <p class="text-primary-600">{{ organization.description }}</p>
-        </div>
+            <!-- Rating Distribution Chart -->
+            <app-rating-chart [ratingDistribution]="ratingDistribution"></app-rating-chart>
 
         <!-- Reviews Section -->
-        <div class="space-y-6">
-            <h2 class="text-xl font-semibold text-primary-900">Reviews</h2>
-            
-            <!-- Reviews List -->
-            <div class="space-y-4">
-                <div *ngFor="let review of reviews" class="rounded-lg bg-surface-DEFAULT p-6 shadow-sm">
-                    <div class="mb-4 flex items-start justify-between">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <div class="flex text-warning-DEFAULT">
-                                    <span *ngFor="let star of [1,2,3,4,5]" 
-                                          class="text-lg"
-                                          [class.text-warning-light]="review.rating < star">
-                                        ★
-                                    </span>
-                                </div>
-                                <span class="text-sm text-primary-600">
-                                    {{ review.createdAt | date }}
-                                </span>
-                            </div>
-                            <h3 class="mt-2 font-medium text-primary-900">{{ review.title }}</h3>
-                        </div>
-                    </div>
-                    
-                    <p class="text-primary-600">{{ review.content }}</p>
-
-                    <!-- Pros & Cons -->
-                    <div *ngIf="review.pros?.length || review.cons?.length" class="mt-4 grid gap-4 md:grid-cols-2">
-                        <div *ngIf="review.pros?.length" class="space-y-2">
-                            <h4 class="font-medium text-success-dark">Pros</h4>
-                            <ul class="list-inside list-disc space-y-1 text-primary-600">
-                                <li *ngFor="let pro of review.pros">{{ pro }}</li>
-                            </ul>
-                        </div>
-                        <div *ngIf="review.cons?.length" class="space-y-2">
-                            <h4 class="font-medium text-error-dark">Cons</h4>
-                            <ul class="list-inside list-disc space-y-1 text-primary-600">
-                                <li *ngFor="let con of review.cons">{{ con }}</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Empty State -->
-            <div *ngIf="reviews.length === 0" class="rounded-lg bg-surface-DEFAULT p-8 text-center">
-                <p class="text-primary-600">No reviews yet. Be the first to write a review!</p>
-                <button class="btn-primary mt-4" (click)="onWriteReview()">
+        <div class="bg-surface rounded-xl p-6 shadow-md">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-text-primary">Reviews</h2>
+                <button class="btn-primary flex items-center gap-2" (click)="onWriteReview()">
+                    <i class="material-icons">rate_review</i>
                     Write Review
                 </button>
             </div>
+
+            <app-review-list [organizationId]="+organization.id"></app-review-list>
         </div>
     </ng-container>
 </div> 

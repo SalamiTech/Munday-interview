@@ -52,7 +52,7 @@
                     </p>
                 </div>
             </div>
-            
+
             <div class="stat-card">
                 <div class="stat-icon">
                     <i class="material-icons">star</i>
@@ -60,9 +60,9 @@
                 <div class="stat-content">
                     <h3>Average Rating</h3>
                     <p class="stat-value">{{ reviewStats.averageRating.toFixed(1) || '0.0' }}</p>
-                    <p class="stat-trend" [class.positive]="reviewStats.averageRating >= 4" 
-                       [class.neutral]="reviewStats.averageRating >= 3 && reviewStats.averageRating < 4"
-                       [class.negative]="reviewStats.averageRating < 3">
+                    <p class="stat-trend" [class.positive]="reviewStats.averageRating >= 4"
+                        [class.neutral]="reviewStats.averageRating >= 3 && reviewStats.averageRating < 4"
+                        [class.negative]="reviewStats.averageRating < 3">
                         <i class="material-icons">{{ getAverageRatingIcon() }}</i>
                         <span>{{ getAverageRatingText() }}</span>
                     </p>
@@ -81,24 +81,19 @@
                 <div class="filter-group">
                     <label>Date Range</label>
                     <div class="date-inputs">
-                        <input type="date" formControlName="startDate" placeholder="Start Date">
-                        <input type="date" formControlName="endDate" placeholder="End Date">
+                        <div class="input-wrapper">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" id="startDate" formControlName="startDate">
+                        </div>
+                        <div class="input-wrapper">
+                            <label for="endDate">End Date</label>
+                            <input type="date" id="endDate" formControlName="endDate"
+                                [min]="filterForm.get('startDate')?.value">
+                        </div>
                     </div>
                 </div>
 
-                <div class="filter-group">
-                    <label>Rating Range</label>
-                    <div class="rating-inputs">
-                        <select formControlName="minRating">
-                            <option value="">Min Rating</option>
-                            <option *ngFor="let i of [1,2,3,4,5]" [value]="i">{{ i }} ★</option>
-                        </select>
-                        <select formControlName="maxRating">
-                            <option value="">Max Rating</option>
-                            <option *ngFor="let i of [1,2,3,4,5]" [value]="i">{{ i }} ★</option>
-                        </select>
-                    </div>
-                </div>
+              
 
                 <div class="filter-group">
                     <label>Search</label>
@@ -114,10 +109,22 @@
                     </select>
                 </div>
 
-                <button type="button" class="btn-outline" (click)="resetFilters()">
-                    <i class="material-icons">refresh</i>
-                    Reset Filters
-                </button>
+                <div class="filter-actions">
+                    <button type="button" 
+                            class="btn-outline" 
+                            (click)="resetFilters()" 
+                            [disabled]="!filterForm.dirty">
+                        <i class="material-icons">refresh</i>
+                        Reset Filters
+                    </button>
+                    <button type="button" 
+                            class="btn-primary" 
+                            (click)="loadReviews()" 
+                            [disabled]="!filterForm.dirty">
+                        <i class="material-icons">filter_list</i>
+                        Apply Filters
+                    </button>
+                </div>
             </form>
         </div>
 
@@ -128,7 +135,9 @@
                 <div *ngFor="let review of recentReviews" class="review-card">
                     <div class="review-header">
                         <div class="review-meta">
-                            <span class="review-author">{{ review.isAnonymous ? 'Anonymous' : review.user?.firstName }}</span>
+                            <span class="review-author">
+                                {{ review.isAnonymous ? 'Anonymous' : review.user?.firstName }}
+                            </span>
                             <span class="review-date">{{ review.createdAt | date }}</span>
                         </div>
                         <div class="review-rating">
@@ -212,4 +221,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

@@ -76,15 +76,12 @@
                     <i class="material-icons">lock</i>
                     <input
                         id="password"
-                        [type]="hidePassword ? 'password' : 'text'"
+                        type="password"
                         formControlName="password"
                         placeholder="Create a password"
                         class="form-input"
                         [class.error]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid"
                     >
-                    <button type="button" class="toggle-password" (click)="hidePassword = !hidePassword">
-                        <i class="material-icons">{{ hidePassword ? 'visibility' : 'visibility_off' }}</i>
-                    </button>
                 </div>
                 <div class="password-strength" *ngIf="registerForm.get('password')?.value">
                     <div class="strength-bar">
@@ -108,15 +105,12 @@
                     <i class="material-icons">lock_outline</i>
                     <input
                         id="confirmPassword"
-                        [type]="hideConfirmPassword ? 'password' : 'text'"
+                        type="password"
                         formControlName="confirmPassword"
                         placeholder="Confirm your password"
                         class="form-input"
                         [class.error]="registerForm.get('confirmPassword')?.touched && (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('passwordMismatch'))"
                     >
-                    <button type="button" class="toggle-password" (click)="hideConfirmPassword = !hideConfirmPassword">
-                        <i class="material-icons">{{ hideConfirmPassword ? 'visibility' : 'visibility_off' }}</i>
-                    </button>
                 </div>
                 <div class="error-message" *ngIf="registerForm.get('confirmPassword')?.touched">
                     <span *ngIf="registerForm.get('confirmPassword')?.errors?.['required']">Please confirm your password</span>

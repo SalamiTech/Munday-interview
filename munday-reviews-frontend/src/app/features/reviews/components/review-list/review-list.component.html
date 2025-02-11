@@ -1,111 +1,177 @@
 <!-- Review List Container -->
-<div class="list-container">
+<div class="container mx-auto px-4 py-8">
     <!-- Header -->
-    <div class="list-header">
-        <h1>Reviews</h1>
-        <button class="btn btn-primary" (click)="onCreateReview()">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-text-primary">Reviews</h1>
+            <p class="text-text-secondary mt-2">Discover and share experiences</p>
+        </div>
+        <button class="btn-primary flex items-center gap-2 px-6" (click)="onCreateReview()">
+            <i class="material-icons">add</i>
             Write Review
         </button>
     </div>
 
     <!-- Filters -->
-    <div class="filters">
-        <div class="search-box">
-            <input type="text"
-                   [(ngModel)]="searchQuery"
-                   (ngModelChange)="onSearch($event)"
-                   placeholder="Search reviews..."
-                   class="form-input">
-            <span class="search-icon">🔍</span>
+    <div class="bg-surface rounded-xl p-6 shadow-md mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <i class="material-icons text-text-secondary">search</i>
+                </div>
+                <input type="text"
+                       [(ngModel)]="searchQuery"
+                       (ngModelChange)="onSearch($event)"
+                       placeholder="Search reviews..."
+                       class="form-input pl-10 w-full">
+            </div>
+
+            <select [(ngModel)]="statusFilter"
+                    (ngModelChange)="onStatusChange($event)"
+                    class="form-select">
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+
+            <select [(ngModel)]="sortBy"
+                    (ngModelChange)="loadReviews()"
+                    class="form-select">
+                <option value="createdAt:DESC">Most Recent</option>
+                <option value="rating:DESC">Highest Rating</option>
+                <option value="rating:ASC">Lowest Rating</option>
+                <option value="helpfulCount:DESC">Most Helpful</option>
+            </select>
+
+            <button class="btn-outline flex items-center justify-center gap-2" (click)="loadReviews()">
+                <i class="material-icons">refresh</i>
+                Refresh
+            </button>
         </div>
-
-        <select [(ngModel)]="statusFilter"
-                (ngModelChange)="onStatusChange($event)"
-                class="form-select">
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-        </select>
-
-        <select [(ngModel)]="sortBy"
-                (ngModelChange)="loadReviews()"
-                class="form-select">
-            <option value="createdAt:DESC">Most Recent</option>
-            <option value="rating:DESC">Highest Rating</option>
-            <option value="rating:ASC">Lowest Rating</option>
-            <option value="helpfulCount:DESC">Most Helpful</option>
-        </select>
     </div>
 
     <!-- Loading State -->
-    <div *ngIf="isLoading" class="loading">
-        Loading reviews...
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
     </div>
 
     <!-- Error State -->
-    <div *ngIf="error" class="error-message">
-        {{ error }}
-        <button class="btn btn-outline" (click)="loadReviews()">Try Again</button>
+    <div *ngIf="error" class="bg-error/10 text-error rounded-xl p-6 mb-8 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <i class="material-icons">error_outline</i>
+            <span>{{ error }}</span>
+        </div>
+        <button class="btn-outline border-error text-error hover:bg-error hover:text-white" (click)="loadReviews()">
+            Try Again
+        </button>
     </div>
 
     <!-- Empty State -->
-    <div *ngIf="!isLoading && !error && reviews.length === 0" class="empty-state">
-        <p>No reviews found</p>
-        <button class="btn btn-primary" (click)="onCreateReview()">Write First Review</button>
+    <div *ngIf="!isLoading && !error && reviews.length === 0" 
+         class="bg-surface rounded-xl p-12 text-center">
+        <div class="text-6xl mb-4">📝</div>
+        <h3 class="text-xl font-semibold mb-2">No reviews found</h3>
+        <p class="text-text-secondary mb-6">Be the first to share your experience</p>
+        <button class="btn-primary" (click)="onCreateReview()">Write First Review</button>
     </div>
 
     <!-- Reviews Grid -->
-    <div *ngIf="!isLoading && !error && reviews.length > 0" class="reviews-grid">
-        <div *ngFor="let review of reviews" class="review-card">
-            <div class="review-header">
-                <div class="review-info">
-                    <h3>{{ review.organization?.name }}</h3>
-                    <p class="meta">by {{ review.user?.fullName || 'Anonymous' }} • {{ review.createdAt | date }}</p>
+    <div *ngIf="!isLoading && !error && reviews.length > 0" 
+         class="grid grid-cols-1 gap-6">
+        <div *ngFor="let review of reviews" 
+             class="bg-surface rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-text-primary">{{ review.organization?.name }}</h3>
+                    <p class="text-text-secondary text-sm">
+                        by {{ review.user?.fullName || 'Anonymous' }} • {{ review.createdAt | date }}
+                    </p>
                 </div>
-                <span [class]="getStatusClass(review.status)">{{ review.status }}</span>
-            </div>
-
-            <div class="rating">
-                <span class="stars">
-                    <span *ngFor="let star of [1,2,3,4,5]" 
-                          class="star"
-                          [class.filled]="review.rating >= star">
-                        {{ review.rating >= star ? '★' : '☆' }}
-                    </span>
+                <span [class]="getStatusClass(review.status)"
+                      class="px-3 py-1 rounded-full text-sm font-medium">
+                    {{ review.status }}
                 </span>
-                <span class="rating-value">{{ review.rating }}/5</span>
             </div>
 
-            <p class="review-content">{{ review.content }}</p>
+            <div class="flex items-center gap-2 mb-4">
+                <div class="flex">
+                    <i *ngFor="let star of [1,2,3,4,5]" 
+                        class="material-icons"
+                        [ngClass]="{
+                            'text-warning': review.rating >= star,
+                            'text-warning/30': review.rating < star
+                        }">star</i>
+                </div>
+                <span class="text-text-secondary">{{ review.rating }}/5</span>
+            </div>
 
-            <div class="review-actions">
-                <button class="btn btn-text" (click)="onMarkHelpful(review)">
-                    Helpful ({{ review.helpfulCount }})
-                </button>
-                <button class="btn btn-text" (click)="onReportReview(review)">
-                    Report
-                </button>
-                <button class="btn btn-text" (click)="onEditReview(review)">Edit</button>
-                <button class="btn btn-text delete" (click)="onDeleteReview(review)">Delete</button>
+            <p class="text-text-primary mb-6">{{ review.content }}</p>
+
+            <div class="flex flex-wrap gap-4 mb-6">
+                <div *ngIf="review.pros?.length" class="flex-1 min-w-[200px]">
+                    <h4 class="text-sm font-medium text-success mb-2">Pros</h4>
+                    <ul class="space-y-1">
+                        <li *ngFor="let pro of review.pros" 
+                            class="flex items-center gap-2 text-sm">
+                            <i class="material-icons text-success text-sm">add_circle</i>
+                            {{ pro }}
+                        </li>
+                    </ul>
+                </div>
+                <div *ngIf="review.cons?.length" class="flex-1 min-w-[200px]">
+                    <h4 class="text-sm font-medium text-error mb-2">Cons</h4>
+                    <ul class="space-y-1">
+                        <li *ngFor="let con of review.cons" 
+                            class="flex items-center gap-2 text-sm">
+                            <i class="material-icons text-error text-sm">remove_circle</i>
+                            {{ con }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-border">
+                <div class="flex gap-4">
+                    <button class="btn-text flex items-center gap-1" (click)="onMarkHelpful(review)">
+                        <i class="material-icons">thumb_up</i>
+                        <span>{{ review.helpfulCount }}</span>
+                    </button>
+                    <button class="btn-text flex items-center gap-1" (click)="onReportReview(review)">
+                        <i class="material-icons">flag</i>
+                        <span>Report</span>
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn-outline" (click)="onEditReview(review)">Edit</button>
+                    <button class="btn-outline border-error text-error hover:bg-error hover:text-white" 
+                            (click)="onDeleteReview(review)">
+                        Delete
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Pagination -->
-    <div *ngIf="!isLoading && !error && reviews.length > 0" class="pagination">
-        <button class="btn btn-outline"
+    <div *ngIf="!isLoading && !error && reviews.length > 0" 
+         class="flex justify-between items-center mt-8 bg-surface rounded-xl p-4">
+        <button class="btn-outline"
                 [disabled]="currentPage === 1"
+                [class.opacity-50]="currentPage === 1"
                 (click)="onPageChange(currentPage - 1)">
+            <i class="material-icons">chevron_left</i>
             Previous
         </button>
-        <span class="page-info">
+        <span class="text-text-secondary">
             Page {{ currentPage }} of {{ totalPages }}
         </span>
-        <button class="btn btn-outline"
+        <button class="btn-outline"
                 [disabled]="currentPage === totalPages"
+                [class.opacity-50]="currentPage === totalPages"
                 (click)="onPageChange(currentPage + 1)">
             Next
+            <i class="material-icons">chevron_right</i>
         </button>
     </div>
 </div> 

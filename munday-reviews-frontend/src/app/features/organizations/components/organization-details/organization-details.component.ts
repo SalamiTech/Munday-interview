@@ -9,6 +9,7 @@ import { WebSocketService } from '../../../../core/services/websocket.service';
 import { RatingChartComponent } from '../../../dashboard/components/rating-chart/rating-chart.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, takeUntil, map } from 'rxjs';
+import { ReviewListComponent } from '../../../reviews/components/review-list/review-list.component';
 
 interface WebSocketEvents {
     reviewCreated: Review;
@@ -23,7 +24,8 @@ interface WebSocketEvents {
     imports: [
         CommonModule,
         RouterModule,
-        RatingChartComponent
+        RatingChartComponent,
+        ReviewListComponent
     ],
     templateUrl: './organization-details.component.html',
     styleUrls: ['./organization-details.component.scss']
@@ -31,7 +33,7 @@ interface WebSocketEvents {
 export class OrganizationDetailsComponent implements OnInit, OnDestroy {
     organization: Organization | null = null;
     reviews: Review[] = [];
-    isLoading = false;
+    isLoading = true;
     error = '';
     ratingDistribution: { [key: number]: number } = {
         1: 0,
@@ -40,6 +42,7 @@ export class OrganizationDetailsComponent implements OnInit, OnDestroy {
         4: 0,
         5: 0
     };
+    canEdit = false;
     private destroy$ = new Subject<void>();
 
     constructor(
@@ -51,13 +54,14 @@ export class OrganizationDetailsComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        const id = this.route.snapshot.paramMap.get('id');
-        if (!id) {
-            this.router.navigate(['/organizations']);
-            return;
-        }
-        this.loadOrganizationData(id);
-        this.setupWebSocket(id);
+        this.route.params
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(params => {
+                if (params['id']) {
+                    this.loadOrganization(params['id']);
+                    this.setupWebSocket(params['id']);
+                }
+            });
     }
 
     ngOnDestroy(): void {
@@ -148,26 +152,25 @@ export class OrganizationDetailsComponent implements OnInit, OnDestroy {
         };
     }
 
-    loadOrganizationData(id: string): void {
+    loadOrganization(id: string): void {
         this.isLoading = true;
         this.error = '';
-        
-        this.organizationService.getOrganization(id).subscribe({
-            next: (organization) => {
-                this.organization = organization;
-                const orgId = parseInt(id, 10);
-                if (isNaN(orgId)) {
-                    this.error = 'Invalid organization ID format';
+
+        this.organizationService.getOrganization(id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (org) => {
+                    this.organization = org;
                     this.isLoading = false;
-                    return;
+                    // Check if user can edit (implement your logic here)
+                    this.canEdit = true; // Temporary, replace with actual auth check
+                },
+                error: (err) => {
+                    this.error = 'Failed to load organization details';
+                    this.isLoading = false;
+                    console.error('Error loading organization:', err);
                 }
-                this.loadReviews(orgId);
-            },
-            error: (error: HttpErrorResponse) => {
-                this.error = 'Failed to load organization details. Please try again.';
-                this.isLoading = false;
-            }
-        });
+            });
     }
 
     loadReviews(organizationId: number): void {
@@ -190,7 +193,7 @@ export class OrganizationDetailsComponent implements OnInit, OnDestroy {
 
     onWriteReview(): void {
         if (this.organization) {
-            this.router.navigate(['/reviews/new'], {
+            this.router.navigate(['/reviews/create'], {
                 queryParams: { organizationId: this.organization.id }
             });
         }
@@ -227,5 +230,27 @@ export class OrganizationDetailsComponent implements OnInit, OnDestroy {
 
     getUserName(review: Review): string {
         return review.user?.fullName || 'Anonymous';
+    }
+
+    getOrgInitials(name: string): string {
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase();
+    }
+
+    onEdit(): void {
+        if (this.organization) {
+            this.router.navigate(['/organizations', this.organization.id, 'edit']);
+        }
+    }
+
+    retryLoad(): void {
+        const id = this.route.snapshot.paramMap.get('id');
+        if (id) {
+            this.loadOrganization(id);
+        }
     }
 } 
